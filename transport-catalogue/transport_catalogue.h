@@ -121,19 +121,19 @@ namespace transport_catalogue
 		TransportCatalogue();
 		~TransportCatalogue();
 
-		void AddStop(Stop&&);              // Добавляет остановку в словарь всех остановок
-		void AddRoute(Route&&);            // Добавляет маршрут в словарь всех маршрутов
-		void AddDistance(const Stop*, const Stop*, size_t);    // Добавляет расстояние между двумя остановками в словарь
-		size_t GetDistance(const Stop*, const Stop*);          // Возвращает расстояние (size_t метры) между двумя остановками с перестановкой пары
-		size_t GetDistanceDirectly(const Stop*, const Stop*);  // Возвращает расстояние (size_t метры) между двумя остановками без перестановки пары
+		void AddStop(Stop&& stop);              // Добавляет остановку в словарь всех остановок
+		void AddRoute(Route&& bus);            // Добавляет маршрут в словарь всех маршрутов
+		void AddDistance(const Stop* stop_from, const Stop* stop_to, size_t dist);    // Добавляет расстояние между двумя остановками в словарь
+		size_t GetDistance(const Stop* stop1, const Stop* stop2);          // Возвращает расстояние (size_t метры) между двумя остановками с перестановкой пары
+		size_t GetDistanceDirectly(const Stop* stop1, const Stop* stop2);  // Возвращает расстояние (size_t метры) между двумя остановками без перестановки пары
 
-		const Stop* GetStopByName(std::string_view);    // Возвращает указатель на структуру остановки по ее имени
-		Route* GetRouteByName(std::string_view);        // Возвращает указатель на структуру маршрута по его имени
+		const Stop* GetStopByName(std::string_view stop_name);    // Возвращает указатель на структуру остановки по ее имени
+		Route* GetRouteByName(std::string_view bus_name);        // Возвращает указатель на структуру маршрута по его имени
 
-		void GetRouteInfo(std::string_view, std::string&);    // Возвращает строку с информацией о маршруте с номером из sv
-		void GetBusesForStop(std::string_view, std::string&); // Возвращает строку с информацией об автобусах для останоки из sv
+		void GetRouteInfo(std::string_view bus_name, std::string& result);    // Возвращает строку с информацией о маршруте с номером из sv
+		void GetBusesForStop(std::string_view stop_name, std::string& result); // Возвращает строку с информацией об автобусах для останоки из sv
 
-		void ProcessInputQuery(InputQuery&);       // Парсер входящих запросов, для которых модулем ввода данных
+		void ProcessInputQuery(InputQuery& query);       // Парсер входящих запросов, для которых модулем ввода данных
 		// определен их тип (т.е. заполнено поле InputQuery.InputQueryType)
 
 	private:
@@ -157,4 +157,5 @@ namespace transport_catalogue
 		std::string_view GetBusName(const Route route);
 	};
 }
+
 
