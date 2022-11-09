@@ -3,15 +3,15 @@
 namespace transport_catalogue::geo
 {
 
-    // Р Р°РґРёСѓСЃ Р—РµРјР»Рё, РјРµС‚СЂРѕРІ
+    // Радиус Земли, метров
     const int EARTH_RADIUS = 6371000;
 
-    // РЎС‚СЂСѓРєС‚СѓСЂР°, РѕРїСЂРµРґРµР»СЏСЋС‰Р°СЏ РїРѕР»РѕР¶РµРЅРёРµ С‚РѕС‡РєРё РІ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ
-    // Рё РјРµС‚РѕРґС‹ СЂР°Р±РѕС‚С‹ СЃ РЅРµР№
+    // Структура, определяющая положение точки в пространстве
+    // и методы работы с ней
     struct Coordinates
     {
-        double lat;  // РЁРёСЂРѕС‚Р°
-        double lng;  // Р”РѕР»РіРѕС‚Р°
+        double lat;  // Широта
+        double lng;  // Долгота
         bool operator==(const Coordinates& other) const
         {
             return lat == other.lat && lng == other.lng;

@@ -1,60 +1,123 @@
 #include "input_reader.h"
+// напишите решение с нуля
+// код сохраните в свой git-репозиторий
+
+// В будущих проектах после снятия ограничений перенести в отдельный файл типа utility.h/.cpp
+namespace detail
+{
+	std::pair<std::string_view, std::string_view> Split(std::string_view line, char by, int count)
+	{
+		size_t pos = line.find(by);
+		for (int i = 1; (i < count) && (pos != line.npos); ++i)
+		{
+			pos = line.find(by, pos + 1);
+		}
+		// Substr может принимать на вход любые значения сдвига, включая npos (возврат всей строки)
+		std::string_view left = line.substr(0, pos);
+
+		// Если символ-разделитель был найден...
+		if (pos < line.size() && pos + 1 < line.size())
+		{
+			// ...возвращаем подстроки без разделителя
+			return { left, line.substr(pos + 1) };
+		}
+		else
+		{
+			// ...иначе все возвращаем в первой строке и пустую вторую
+			return { left, std::string_view() };
+		}
+	}
+
+	std::string_view Lstrip(std::string_view line)
+	{
+		// Пока строка не пуста и первый символ не пробел...
+		while (!line.empty() && std::isspace(line[0]))
+		{
+			// ...удаляем первый символ
+			line.remove_prefix(1);
+		}
+		return line;
+	}
+
+	std::string_view Rstrip(std::string_view line)
+	{
+		// Для ускорения запомним длину строки в локальной переменной
+		size_t line_size = line.size();
+		// Пока строка не пуста и последний символ не пробел...
+		while (!line.empty() && std::isspace(line[line_size - 1]))
+		{
+			// ...удаляем последний символ
+			line.remove_suffix(1);
+			--line_size;
+		}
+		return line;
+	}
+
+	std::string_view TrimString(std::string_view line)
+	{
+		return Rstrip(Lstrip(line));
+	}
+}
 
 
 namespace transport_catalogue::input_reader
 {
+
 	void ProcessInput(TransportCatalogue& tc, std::istream& is)
 	{
+		// Вектор запросов. Порядок выполнения зависит от категории запроса
 		std::vector<InputQuery> queries;
-		// Р‘СѓС„РµСЂ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ С‚РµРєСѓС‰РµР№ РїСЂРѕС‡РёС‚Р°РЅРЅРѕР№ СЃС‚СЂРѕРєРё
+
+		// Буфер для хранения текущей прочитанной строки
 		std::string line;
 		std::getline(is, line);
-
-		// РџРµСЂРІР°СЏ СЃС‚СЂРѕРєР° - РєРѕР»РёС‡РµСЃС‚РІРѕ Р·Р°РїСЂРѕСЃРѕРІ РЅР° РґРѕР±Р°РІР»РµРЅРёРµ РґР°РЅРЅС‹С…
+		// Первая строка - количество запросов на добавление данных
 		size_t request_num = static_cast<size_t>(std::stoul(line));
-
 		for (size_t i = 0; i < request_num; ++i)
 		{
 			using namespace std::literals;
 			std::getline(is, line, '\n');
-			// Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: "Stop Tolstopaltsevo: 55.611087, 37.208290"
-			// Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: "Bus 750: Tolstopaltsevo - Marushkino - Rasskazovka"
-			// Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: "Stop Universam: 55.587655, 37.645687, 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
+			// Формат строки: "Stop Tolstopaltsevo: 55.611087, 37.208290"
+			// Формат строки: "Bus 750: Tolstopaltsevo - Marushkino - Rasskazovka"
+			// Формат строки: "Stop Universam: 55.587655, 37.645687, 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
 
-			// РћС‚РґРµР»СЏРµРј РєРѕРјР°РЅРґСѓ РѕС‚ РµРµ РїР°СЂР°РјРµС‚СЂРѕРІ
+			// Отделяем команду от ее параметров
 			auto tmp = detail::Split(line, ' ');
-			// Р§РёСЃС‚РёРј РїСЂРѕР±РµР»С‹
+			// Чистим пробелы
 			tmp.first = detail::TrimString(tmp.first);
 			tmp.second = detail::TrimString(tmp.second);
-			// Р•СЃР»Рё tmp.second РїСѓСЃС‚, С‚Рѕ СЌС‚Рѕ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ РІРІРѕРґ, РїСЂРѕРїСѓСЃРєР°РµРј
+
+			// Если tmp.second пуст, то это некорректный ввод, пропускаем
+			// TODO в будущем могут появиться команды без параметров
 			if (tmp.second.empty())
 			{
 				continue;
 			}
+
 			InputQuery query;
 			if (tmp.first == "Stop"sv)
 			{
-				// Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: "Stop Tolstopaltsevo: 55.611087, 37.208290"
-				// Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: "Stop Universam: 55.587655, 37.645687, 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
+				// Формат строки: "Stop Tolstopaltsevo: 55.611087, 37.208290"
+				// Формат строки: "Stop Universam: 55.587655, 37.645687, 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
 				query.type = InputQueryType::AddStop;
-				// Р—РґРµСЃСЊ РІРѕР·РјРѕР¶РЅС‹ 2 РІР°СЂРёР°РЅС‚Р° РґР»СЏ tmp.second: Р»РёР±Рѕ С‚РѕР»СЊРєРѕ РєРѕРѕСЂРґРёРЅР°С‚С‹, Р»РёР±Рѕ РєРѕРѕСЂРґРёРЅР°С‚С‹ + СЃРїРёСЃРѕРє СЂР°СЃСЃС‚РѕСЏРЅРёР№
-				// РС‰РµРј РІС‚РѕСЂСѓСЋ Р·Р°РїСЏС‚СѓСЋ
+				// Здесь возможны 2 варианта для tmp.second: либо только координаты, либо координаты + список расстояний
+				// Ищем вторую запятую
 				tmp = detail::Split(tmp.second, ',', 2);
-				// Р§РёСЃС‚РёРј РїСЂРѕР±РµР»С‹
+				// Чистим пробелы
 				tmp.first = detail::Rstrip(tmp.first);
 				tmp.second = detail::Lstrip(tmp.second);
 				if (tmp.second.size() != 0)
 				{
-					// Р•СЃС‚СЊ СЃРїРёСЃРѕРє СЂР°СЃСЃС‚РѕСЏРЅРёР№. Р Р°Р·Р±РёРІР°РµРј Р·Р°РїСЂРѕСЃ РЅР° 2 РѕС‚РґРµР»СЊРЅС‹С…
-					//tmp.first СЃРѕРґРµСЂР¶РёС‚ "Tolstopaltsevo: 55.611087, 37.208290"
-					//tmp.second СЃРѕРґРµСЂР¶РёС‚ " 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
-					// Р”Р»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂР°СЃСЃС‚РѕСЏРЅРёР№ РЅСѓР¶РЅРѕ СЃРѕС…СЂР°РЅРёС‚СЊ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ РѕСЃС‚Р°РЅРѕРІРєРё РґР»СЏ РІС‚РѕСЂРѕРіРѕ Р·Р°РїСЂРѕСЃР°.
+					// Есть список расстояний. Разбиваем запрос на 2 отдельных
+					//tmp.first содержит "Tolstopaltsevo: 55.611087, 37.208290"
+					//tmp.second содержит " 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
+					// Для корректного сохранения расстояний нужно сохранить наименование остановки для второго запроса.
 					auto tmp_stop_name = detail::Split(tmp.first, ':');
 					tmp_stop_name.first = detail::TrimString(tmp_stop_name.first);
-					// РЎРЅР°С‡Р°Р»Р° Р·Р°РїСЂРѕСЃ СЃ РєРѕРѕСЂРґРёРЅР°С‚Р°РјРё
+					// Сначала запрос с координатами
 					query.query = std::string(tmp.first);
 					queries.push_back(std::move(query));
-					// РўРµРїРµСЂСЊ РІС‚РѕСЂРѕР№ СЃ СЂР°СЃСЃС‚РѕСЏРЅРёРµРј
+					// Теперь второй с расстоянием
 					query = {};
 					query.type = InputQueryType::AddStopsDistance;
 					query.query = std::string(tmp_stop_name.first) + ":"s + std::string(tmp.second);
@@ -62,16 +125,16 @@ namespace transport_catalogue::input_reader
 				}
 				else
 				{
-					// Р’ Р·Р°РїСЂРѕСЃРµ С‚РѕР»СЊРєРѕ РєРѕРѕСЂРґРёРЅР°С‚С‹
-					//tmp.first СЃРѕРґРµСЂР¶РёС‚ "Tolstopaltsevo: 55.611087, 37.208290"
-					//tmp.second СЃРѕРґРµСЂР¶РёС‚ ""
+					// В запросе только координаты
+					//tmp.first содержит "Tolstopaltsevo: 55.611087, 37.208290"
+					//tmp.second содержит ""
 					query.query = std::string(tmp.first);
 					queries.push_back(std::move(query));
 				}
 			}
 			else if (tmp.first == "Bus"sv)
 			{
-				// Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: "Bus 750: Tolstopaltsevo - Marushkino - Rasskazovka"
+				// Формат строки: "Bus 750: Tolstopaltsevo - Marushkino - Rasskazovka"
 				query.type = InputQueryType::AddRoute;
 				query.query = std::string(tmp.second);
 				queries.push_back(std::move(query));
@@ -79,36 +142,201 @@ namespace transport_catalogue::input_reader
 			else
 			{
 				query.type = InputQueryType::NoOp;
-				// Р—Р°РїРѕРјРёРЅР°РµРј С‚РµРєСЃС‚ Р·Р°РїСЂРѕСЃР°, РґР°Р¶Рµ РµСЃР»Рё РµРіРѕ С‚РёРї NoOp
+				// Запоминаем текст запроса, даже если его тип NoOp
 				query.query = std::string(tmp.second);
 				queries.push_back(std::move(query));
 			}
 		}
-		// РЎРЅР°С‡Р°Р»Р° РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј Р·Р°РїСЂРѕСЃС‹ РЅР° РґРѕР±Р°РІР»РµРЅРёРµ РѕСЃС‚Р°РЅРѕРІРѕРє
+
+		// Разбор ввода и разделение на запросы завершены. Обрабатываем запросы
+		ProcessInputQueries(tc, queries);
+	}
+
+	void ProcessInputQueries(TransportCatalogue& tc, std::vector<InputQuery>& queries)
+	{
 		std::vector<InputQuery> delayed;
-		for (auto element : queries)
+
+		// Сначала обрабатываем запросы на добавление остановок
+		for (auto& element : queries)
 		{
 			if (element.type == InputQueryType::AddStop)
 			{
-				tc.ProcessInputQuery(element);
+				tc.AddStop(ProcessQueryAddStop(element.query));
 			}
 			else
 			{
 				delayed.push_back(std::move(element));
 			}
 		}
-		// РћР±СЂР°Р±Р°С‚С‹РІР°РµРј Р·Р°РїСЂРѕСЃС‹ РЅР° РґРѕР±Р°РІР»РµРЅРёРµ СЂР°СЃСЃС‚РѕСЏРЅРёР№
-		for (auto element : delayed)
+
+		// Т.к. запросы выполняются сразу, то строки и их sv больше не нужны, безопасно делать swap
+		queries.swap(delayed);
+		delayed.clear();
+
+		// Обрабатываем запросы на добавление расстояний
+		for (auto& element : queries)
 		{
 			if (element.type == InputQueryType::AddStopsDistance)
 			{
-				tc.ProcessInputQuery(element);
+				// Сложная обработка, для упрощения передаем tc внутрь функции
+				ProcessQueryAddStopsDistance(tc, element.query);
+			}
+			else
+			{
+				delayed.push_back(std::move(element));
 			}
 		}
-		// РћР±СЂР°Р±Р°С‚С‹РІР°РµРј РІСЃРµ РѕСЃС‚Р°Р»СЊРЅРѕРµ
-		for (auto element : delayed)
+
+		// Обрабатываем все остальное
+		for (auto& element : delayed)
 		{
-			tc.ProcessInputQuery(element);
+			if (element.type == InputQueryType::AddRoute)
+			{
+				// Сложная обработка, для упрощения передаем tc внутрь функции
+				tc.AddRoute(std::move(ProcessQueryAddRoute(tc, element.query)));
+			}
+
+			// Остальные запросы, например, InputQueryType::NoOp, игнорируем
 		}
 	}
+
+
+	Stop ProcessQueryAddStop(std::string& query)
+	{
+		// Формат входной строки "Rasskazovka: 55.632761, 37.333324"
+		Stop new_stop;
+
+		// Отделяем название от блока координат
+		auto tmp = detail::Split(query, ':');
+		// Чистим пробелы
+		tmp.first = detail::TrimString(tmp.first);
+		tmp.second = detail::TrimString(tmp.second);
+
+		// Сохраняем string с названием
+		new_stop.name = std::string(tmp.first);
+
+		// Разделяем координаты
+		tmp = detail::Split(tmp.second, ' ');
+		// Чистим пробелы с учетом ранее очищенных боков общей строки
+		tmp.first = detail::Rstrip(tmp.first);
+		tmp.second = detail::Lstrip(tmp.second);
+
+		// Конвертируем и сохраняем координаты
+		new_stop.coords.lat = std::stod(std::string(tmp.first));
+		new_stop.coords.lng = std::stod(std::string(tmp.second));
+
+		// Возвращаем подготовленную структуру
+		return new_stop;
+	}
+
+
+	void ProcessQueryAddStopsDistance(TransportCatalogue& tc, std::string& query)
+	{
+		// Формат входной строки "Tolstopaltsevo: 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya"
+
+		// Отделяем название от блока расстояний
+		auto tmp = detail::Split(query, ':');
+		// Чистим пробелы
+		tmp.first = detail::TrimString(tmp.first);
+		tmp.second = detail::TrimString(tmp.second);
+
+		// Получаем указатель на остановку для которой сохраняем расстояния
+		const Stop* stop_from = tc.GetStopByName(tmp.first);
+		if (stop_from == nullptr)
+		{
+			// Остановка не существует. Выходим.
+			return;
+		}
+
+		size_t dist = 0U;
+		const Stop* stop_to = nullptr;
+
+		while (tmp.second.size() != 0)
+		{
+			// Выделяем расстояние
+			tmp = detail::Split(tmp.second, 'm');
+			tmp.first = detail::TrimString(tmp.first);
+			tmp.second = detail::Lstrip(tmp.second);
+			dist = std::stoul(std::string(tmp.first));
+
+			// Выделяем название второй остановки
+			tmp = detail::Split(tmp.second, ' ');
+			tmp = detail::Split(tmp.second, ',');
+			tmp.first = detail::TrimString(tmp.first);
+			tmp.second = detail::Lstrip(tmp.second);
+			stop_to = tc.GetStopByName(tmp.first);
+			if (stop_to == nullptr)
+			{
+				// Остановка не существует. Выходим.
+				return;
+			}
+
+			// Вносим запись в словарь расстояний
+			tc.AddDistance(stop_from, stop_to, dist);
+		}
+	}
+
+
+	Route ProcessQueryAddRoute(TransportCatalogue& tc, std::string& query)
+	{
+		// Формат входной строки "750: Tolstopaltsevo - Marushkino - Rasskazovka"
+		// Формат входной строки "256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye"
+
+		Route new_route;
+
+		// Отделяем название маршрута от блока остановок
+		auto tmp = detail::Split(query, ':');
+		// Чистим пробелы
+		tmp.first = detail::TrimString(tmp.first);
+		tmp.second = detail::TrimString(tmp.second);
+
+		// Сохраняем string с названием
+		new_route.bus_number = std::string(tmp.first);
+
+		// Если в строке нет разделителя > (кольцевой маршрут), то устанавливаем по-умолчанию разделитель '-'
+		char delim = (tmp.second.find('>') == tmp.second.npos ? '-' : '>');
+
+		std::vector<std::string_view> stops_list;
+
+		// Пока tmp.second не пусто (пробелы на конце удалены ранее и тут либо данные, либо ничего нет)
+		while (tmp.second.size() != 0)
+		{
+			// нарезаем строку на остановки
+
+			// Отделяем очерезную остановку в tmp.first
+			tmp = detail::Split(tmp.second, delim);
+			// Чистим пробелы с учетом ранее очищенных боков общей строки
+			tmp.first = detail::Rstrip(tmp.first);
+			tmp.second = detail::Lstrip(tmp.second);
+
+			// Запоминаем название
+			stops_list.push_back(tmp.first);
+		}
+
+		if ((delim == '-') && (stops_list.size() > 1))
+		{
+			// Достраиваем обратный маршрут для некольцевого маршрута
+			for (int i = stops_list.size() - 2; i >= 0; --i)
+			{
+				// Добавляем в конец вектора остановки в обратном направлении, кроме конечной stops_list[size() - 1]
+				stops_list.push_back(stops_list[i]);
+			}
+		}
+
+		// Переводим string_view с названиями в указатели на остановки из базы и запоминаем
+		for (auto& element : stops_list)
+		{
+			// Получаем либо указатель, либо nullptr
+			const Stop* tmp_ptr = tc.GetStopByName(element);
+			if (tmp_ptr != nullptr)
+			{
+				// Добавляем ТОЛЬКО существующие остановки (в данной версии)
+				new_route.stops.push_back(tmp_ptr);
+			}
+		}
+
+		// Возвращаем подготовленную структуру
+		return new_route;
+	}
+
 }
