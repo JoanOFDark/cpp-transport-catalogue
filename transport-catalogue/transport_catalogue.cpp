@@ -1,217 +1,161 @@
-#include "transport_catalogue.h"
+#include "transport_catalogue.h" 
 
-namespace transport_catalogue
-{
+namespace TransportsCatalogue {
 
+    TransportCatalogue::TransportCatalogue() {}
 
-	TransportCatalogue::TransportCatalogue()
-	{}
+    std::deque<Stop>* TransportCatalogue::GetStops() {
+        return &stops;
+    }
 
-	TransportCatalogue::~TransportCatalogue()
-	{}
+    std::deque<Bus>* TransportCatalogue::GetBuses()
+    {
+        return &buses;
+    }
 
-	void TransportCatalogue::AddStop(Stop&& stop)
-	{
-		if (all_stops_map_.count(GetStopName(&stop)) == 0)
-		{
-			// Таких остановок в базе нет, добавлям
+    std::unordered_map<std::string_view, Stop*>* TransportCatalogue::get_stopname_to_stop()
+    {
+        return  &stopname_to_stop;
+    }
 
-			// 1. Добавляем остановку в дек-хранилище, перемещая stop
-			auto& ref = all_stops_data_.emplace_back(std::move(stop));
-			// 2. Добавляем остановку в словарь остановок
-			all_stops_map_.insert({ std::string_view(ref.name), &ref });
-		}
-	}
+    std::unordered_map<std::string_view, Bus*>* TransportCatalogue::get_busname_to_bus()
+    {
+        return &busname_to_bus;
+    }
 
-	void TransportCatalogue::AddRoute(Route&& route)
-	{
-		// Отсутствует ли этот маршрут (автобус) route в базе?
-		if (all_buses_map_.count(route.bus_number) == 0)
-		{
-			// 1. Добавляем маршрут (автобус) в дек-хранилище, перемещая route
-			auto& ref = all_buses_data_.emplace_back(std::move(route));
+    std::unordered_map<Stop*, std::set<std::string_view>>* TransportCatalogue::get_stop_wiht_bus()
+    {
+        return &stop_wiht_bus;
+    }
 
-			// 2. Добавляем указатель на автобус (маршрут) из хранилища в словарь маршрутов
-			all_buses_map_.insert({ std::string_view(ref.bus_number), &ref });
+    std::unordered_map<const StopToStop, double, TransportCatalogueHasher>* TransportCatalogue::get_stop_distance()
+    {
+        return &stop_distance;
+    }
 
-			// 3. Подсчитываем уникальные остановки на маршруте
-			// Копируем вектор указателей
-			std::vector<const Stop*> tmp = ref.stops;
-			std::sort(tmp.begin(), tmp.end());
-			auto last = std::unique(tmp.begin(), tmp.end());
-			// Сохраняем количество уникальных остановок на маршруте
-			ref.unique_stops_qty = (last != tmp.end() ? std::distance(tmp.begin(), last) : tmp.size());
+    void TransportCatalogue::PrepareStops()
+    {
+        for (Stop& temp_stop : stops)
+            AddStop(temp_stop);
+    }
 
-			// 4. Подсчитываем длину маршрута
-			int stops_num = static_cast<int>(ref.stops.size());
-			if (stops_num > 1)
-			{
-				ref.geo_route_length = 0L;
-				ref.meters_route_length = 0U;
-				for (int i = 0; i < stops_num - 1; ++i)
-				{
-					ref.geo_route_length += ComputeDistance(ref.stops[i]->coords, ref.stops[i + 1]->coords);
-					ref.meters_route_length += GetDistance(ref.stops[i], ref.stops[i + 1]);
-				}
-				ref.curvature = ref.meters_route_length / ref.geo_route_length;
-			}
-			else
-			{
-				// У маршрута 0 или 1 остановка. Длина == 0
-				ref.geo_route_length = 0L;
+    void TransportCatalogue::PrepareDistance()
+    {
+        for (Stop& temp_stop : stops)
+        {
+            for (const auto& item : temp_stop.road_distances)
+                SetDistance(&temp_stop, get_stopname_to_stop()->at(item.first), item.second);
+        }
+    }
 
-				ref.meters_route_length = 0U;
+    void TransportCatalogue::PrepareBus()
+    {
+        for (Bus& temp_bus : buses)
+            AddBus(temp_bus);
+    }
 
-				ref.curvature = 1L;
+    void TransportCatalogue::PrepareStopsWithBus()
+    {
+        for (Bus& temp_bus : buses)
+        {
+            for (auto& BussStop : temp_bus.busStop) {
+                stop_wiht_bus[BussStop].insert(temp_bus.name);
+            }
+        }
 
-			}
-		}
-	}
+    }
 
+    void TransportCatalogue::AddStop(Stop& stop)
+    {
+        stopname_to_stop[stop.name] = &stop;
+    }
 
-	void TransportCatalogue::AddDistance(const Stop* stop_from, const Stop* stop_to, size_t dist)
-	{
-		if (stop_from != nullptr && stop_to != nullptr)
-		{
-			// Вносим запись в словарь расстояний
-			distances_map_.insert({ { stop_from, stop_to }, dist });
-		}
-	}
+    void TransportCatalogue::AddBus(Bus& bus)
+    {
+        busname_to_bus[bus.name] = &bus;
+    }
 
-	size_t TransportCatalogue::GetDistance(const Stop* stop_from, const Stop* stop_to)
-	{
-		size_t result = GetDistanceDirectly(stop_from, stop_to);
-		// Если прямого расстояния в словаре нет, возвращаем обратное расстояние, даже если оно 0
-		return (result > 0 ? result : GetDistanceDirectly(stop_to, stop_from));
-	}
+    Bus* TransportCatalogue::FindBus(std::string name)
+    {
+        if (busname_to_bus.count(name) != 0) {
+            return busname_to_bus[name];
+        }
+        return nullptr;
+    }
 
-	size_t TransportCatalogue::GetDistanceDirectly(const Stop* stop_from, const Stop* stop_to)
-	{
-		if (distances_map_.count({ stop_from, stop_to }) > 0)
-		{
-			return distances_map_.at({ stop_from, stop_to });
-		}
-		else
-		{
-			return 0U;
-		}
-	}
+    Stats TransportCatalogue::GetBusInfo(std::string bus_name)
+    {
+        Stats stats{};
+        if (busname_to_bus.count(bus_name) == 0) {
+            return stats;
+        }
 
-	std::string_view TransportCatalogue::GetStopName(const Stop* stop_ptr)
-	{
-		return std::string_view(stop_ptr->name);
-	}
+        else {
+            std::unordered_set<Stop*> unique_stops;
+            stats.stops = static_cast<int>(busname_to_bus.at(bus_name)->busStop.size());
+            unique_stops.insert(busname_to_bus.at(bus_name)->busStop.begin(), busname_to_bus.at(bus_name)->busStop.end());
+            stats.unique_stops = static_cast<int>(unique_stops.size());
+            double distance2 = 0;
 
-	std::string_view TransportCatalogue::GetStopName(const Stop stop)
-	{
-		return std::string_view(stop.name);
-	}
+            for (auto to = busname_to_bus.at(bus_name)->busStop.begin(), from = to++; to != busname_to_bus.at(bus_name)->busStop.end(); ++to, ++from) {
+                {
+                    detail::distant::Coordinates A, B;
+                    A.lat = (*from)->latitude;
+                    A.lng = (*from)->longitude;
+                    B.lat = (*to)->latitude;
+                    B.lng = (*to)->longitude;
+                    distance2 += GetDistance(*from, *to);
+                    auto distance = ComputeDistance(A, B);
+                    stats.route_length = distance2;
+                    stats.route_length2 += distance;
+                }
+            }
+            stats.route_length2 = stats.route_length / stats.route_length2;
+        }
+        return stats;
 
-	std::string_view TransportCatalogue::GetBusName(const Route* route_ptr)
-	{
-		return std::string_view(route_ptr->bus_number);
-	}
+    }
 
-	std::string_view TransportCatalogue::GetBusName(const Route route)
-	{
-		return std::string_view(route.bus_number);
-	}
+    InfoToPrintStop TransportCatalogue::GetStopInfo(std::string_view name)
+    {
+        InfoToPrintStop item;
+        if (stopname_to_stop.count(name) != 0) {
+            item.stop_exist = true;
+            if (stop_wiht_bus.count(stopname_to_stop.at(name)) != 0) {
+                for (auto& bus : stop_wiht_bus.at(stopname_to_stop.at(name))) {
+                    item.buss.push_back(move(bus));
+                }
+            }
+        }
+        return item;
+    }
 
+    void TransportCatalogue::SetDistance(Stop* A, Stop* B, double distant)
+    {
+        get_stop_distance()->operator[](StopToStop(A, B)) = distant;
+    }
 
-	const Stop* TransportCatalogue::GetStopByName(std::string_view stop_name)
-	{
-		if (all_stops_map_.count(stop_name) == 0)
-		{
-			// Таких остановок в базе нет
-			return nullptr;
-		}
-		else
-		{
-			return all_stops_map_.at(stop_name);
-		}
-	}
+    double TransportCatalogue::GetDistance(Stop* A, Stop* B)
+    {
+        if (get_stop_distance()->count(StopToStop(A, B)) != 0)
+            return get_stop_distance()->at(StopToStop(A, B));
+        else
+            return get_stop_distance()->at(StopToStop(B, A));
+        return 0.0;
+    }
 
-	Route* TransportCatalogue::GetRouteByName(std::string_view bus_name)
-	{
-		if (all_buses_map_.count(bus_name) == 0)
-		{
-			// Таких остановок в базе нет
-			return nullptr;
-		}
-		else
-		{
-			return all_buses_map_.at(bus_name);
-		}
-	}
+    Stop* TransportCatalogue::FindStop(std::string name)
+    {
+        if (stopname_to_stop.count(name) != 0) {
+            return stopname_to_stop[name];
+        }
+        return nullptr;
+    }
 
-
-	RequestResult TransportCatalogue::GetRouteInfo(std::string_view bus_name)
-	{
-		RequestResult result;
-		result.r_ptr = GetRouteByName(bus_name);
-
-		if (result.r_ptr != nullptr)
-		{
-			// Маршрут с таким именем существует
-			result.code = RequestResultType::Ok;
-		}
-		else
-		{
-			// Маршрут с таким именем НЕ существует
-			result.code = RequestResultType::RouteNotExists;
-		}
-
-		return result;
-	}
-
-
-	RequestResult TransportCatalogue::GetBusesForStop(std::string_view stop_name)
-	{
-		RequestResult result;
-		result.s_ptr = GetStopByName(stop_name);
-
-		if (result.s_ptr != nullptr)
-		{
-			// TODO Улучшить метод, добавив обратный словарь stops_to_buses_map_
-			std::vector<std::string_view> found_buses_sv;   // временный вектор найденных результатов
-			for (auto& bus : all_buses_map_)
-			{
-				// Ищем в векторе остановок для текущего маршрута цикла bus хоть 1 совпадение с заданной остановкой
-				auto tmp = std::find_if(bus.second->stops.begin(), bus.second->stops.end(),
-					[stop_name](const Stop* curr_stop)
-					{
-						return (curr_stop->name == stop_name);
-					});
-				if (tmp != bus.second->stops.end())
-				{
-					// Что-то найдено. Добавляем в вывод
-					found_buses_sv.push_back(bus.second->bus_number);
-				}
-			}
-
-			if (found_buses_sv.size() > 0)
-			{
-				// Да, есть найденные маршруты. Формируем ответ
-				result.code = RequestResultType::Ok;
-				std::sort(found_buses_sv.begin(), found_buses_sv.end());
-				for (auto& element : found_buses_sv)
-				{
-					// Переводим в строки
-					result.vector_str.emplace_back(std::string(element));
-				}
-			}
-			else
-			{
-				// Для данной остановки ни одного маршрута не зарегистрировано.
-				result.code = RequestResultType::NoBuses;
-			}
-		}
-		else
-		{
-			// Такая остановка не найдена.
-			result.code = RequestResultType::StopNotExists;
-		}
-
-		return result;
-	}
+    std::size_t TransportCatalogueHasher::operator()(const StopToStop pair_of_pointers) const noexcept
+    {
+        auto ptr1 = static_cast<const void*>(pair_of_pointers.AtoB.first);
+        auto ptr2 = static_cast<const void*>(pair_of_pointers.AtoB.second);
+        return hasher_(ptr1) * 37 + hasher_(ptr2);
+    }
 }

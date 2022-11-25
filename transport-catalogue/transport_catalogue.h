@@ -1,147 +1,58 @@
 #pragma once
-#include "geo.h"           // для работы с координатами остановок
 
+#include "geo.h"
+#include "domain.h"
+
+#include <iostream>
 #include <deque>
-#include <string>
-#include <string_view>
-#include <ostream>         // для перегрузки оператора вывода
-#include <sstream>         // для stringstream
-#include <iomanip>         // для управления выводом (манипуляторы)
-#include <unordered_set>
 #include <unordered_map>
-#include <algorithm>       // для uniq(), find()
-#include <utility>         // for std::pair<>
-#include <cctype>          // for isspace() function
-#include <functional>      // Для шаблона hash<>
-
-namespace transport_catalogue
-{
-
-	// Тип запросов на добавление информации в базу данных. Определяет парсер входных данных.
-	enum class InputQueryType
-	{
-		NoOp,            // значение по-умолчанию, нет операции
-		AddStop,         // добавить информацию об остановке (имя и координаты) ЭТАП-1
-		AddRoute,        // добавить информацию о маршруте (все остановки должны существовать) ЭТАП-3
-		AddStopsDistance,// добавить информацию об остановке (задание расстояний до соседних остановок) ЭТАП-2
-	};
-
-	// Структура запроса на добавление информации.
-	// Внешний парсер входных данных проверяет базовую корректность запроса (тип, наличие тела запроса), т.к. 
-	// только он знает формат работы источника данных и нужную очередность направления запросов в справочник.
-	// Парсер запроса самого транспортного справочника производит логический разбор тела запроса.
-	struct InputQuery
-	{
-		InputQueryType type = InputQueryType::NoOp;
-		std::string query;
-	};
-
-	// Тип запросов на добавление информации в базу данных. Определяет парсер входных данных.
-	enum class RequestQueryType
-	{
-		NoOp,            // значение по-умолчанию, нет операции
-		GetRouteByName,  // получить маршрут по имени
-		GetBusesForStop, // получить маршруты для остановки
-	};
-
-	// Структура запроса на поиск информации
-	struct RequestQuery
-	{
-		RequestQueryType type{ RequestQueryType::NoOp };
-		std::string_view params;
-	};
-
-	// Код результата выполнение запроса к базе данных.
-	enum class RequestResultType
-	{
-		Ok,                  // значение по-умолчанию
-		NoBuses,             // результат: маршруты не найдены
-		StopNotExists,       // результат: остановка не найдена
-		RouteNotExists,      // результат: маршруи не найден
-	};
-
-	// Структура, хранящая информацию об остановке и определяющая
-	// методы работы с ней
-	struct Stop
-	{
-	public:
-		std::string name;
-		geo::Coordinates coords{ 0L,0L };   // Координаты
-
-	};
-
-	// Структура, хранящая информацию о маршруте (автобусе) и определяющая
-	// методы работы с ней
-	struct Route
-	{
-		std::string bus_number;            // Номер маршрута (название)
-		std::vector<const Stop*> stops;    // Контейнер указателей на остановки маршрута
-		size_t unique_stops_qty = 0U;      // Количество уникальных остановок на маршруте (кэшируем, т.к. изменяется только при перестроении маршрута)
-		double geo_route_length = 0L;      // Длина маршрута по прямой между координатами (кэшируем, т.к. изменяется только при перестроении маршрута)
-		size_t meters_route_length = 0U;   // Длина маршрута с учетом заданных расстояний между точками (метры) (кэшируем, т.к. изменяется только при перестроении маршрута)
-		double curvature = 0L;             // Извилистость маршрута = meters_route_length / geo_route_length. >1 для любого маршрута, кроме подземного
-	};
-
-	struct RequestResult
-	{
-		RequestResultType code = RequestResultType::Ok;   // Код завершения (если это требуется вызывающему методу)
-		std::vector<std::string> vector_str;              // Вектор строк. Порядок использования элементов определяется вызывающим методом.
-		const Stop* s_ptr = nullptr;               // Указатель на структуру Остановка. Порядок использования определяется вызывающим методом.
-		const Route* r_ptr = nullptr;              // Указатель на структуру Маршрут (автобус). Порядок использования определяется вызывающим методом.
-	};
-
-	class PairPointersHasher
-	{
-	public:
-		std::size_t operator()(const std::pair<const Stop*, const Stop*> pair_of_pointers) const noexcept
-		{
-			auto ptr1 = static_cast<const void*>(pair_of_pointers.first);
-			auto ptr2 = static_cast<const void*>(pair_of_pointers.second);
-			return hasher_(ptr1) * 37 + hasher_(ptr2);
-		}
-
-	private:
-		std::hash<const void*> hasher_;
-	};
+#include <vector>
+#include <unordered_set>
+#include <set>
 
 
-	class TransportCatalogue
-	{
-	public:
-		TransportCatalogue();
-		~TransportCatalogue();
+namespace TransportsCatalogue {
 
-		void AddStop(Stop&& stop);              // Добавляет остановку в словарь всех остановок
-		void AddRoute(Route&& bus);            // Добавляет маршрут в словарь всех маршрутов
-		void AddDistance(const Stop* stop_from, const Stop* stop_to, size_t dist);    // Добавляет расстояние между двумя остановками в словарь
-		size_t GetDistance(const Stop* stop1, const Stop* stop2);          // Возвращает расстояние (size_t метры) между двумя остановками с перестановкой пары
-		size_t GetDistanceDirectly(const Stop* stop1, const Stop* stop2);  // Возвращает расстояние (size_t метры) между двумя остановками без перестановки пары
+    class TransportCatalogueHasher {
+    public:
+        std::size_t operator()(const StopToStop pair_of_pointers) const noexcept;
+    private:
+        std::hash<const void*> hasher_;
+    };
 
-		const Stop* GetStopByName(std::string_view stop_name);    // Возвращает указатель на структуру остановки по ее имени
-		Route* GetRouteByName(std::string_view bus_name);        // Возвращает указатель на структуру маршрута по его имени
+    class TransportCatalogue {
+    public:
+        TransportCatalogue();
+        std::deque<Stop>* GetStops();
+        std::deque<Bus>* GetBuses();
+        std::unordered_map<std::string_view, Stop*>* get_stopname_to_stop();
+        std::unordered_map<std::string_view, Bus*>* get_busname_to_bus();
+        std::unordered_map<Stop*, std::set<std::string_view>>* get_stop_wiht_bus();
+        std::unordered_map<const StopToStop, double, TransportCatalogueHasher>* get_stop_distance();
 
-		RequestResult GetRouteInfo(std::string_view);         // Возвращает строку с информацией о маршруте с номером из sv
-		RequestResult GetBusesForStop(std::string_view);      // Возвращает строку с информацией об автобусах для останоки из sv
+        void PrepareStops();
+        void PrepareDistance();
+        void PrepareBus();
+        void PrepareStopsWithBus();
 
-	private:
-		std::deque<Stop> all_stops_data_;                                     // Дек с информацией обо всех остановках (реальные данные, не указатели)
-		std::unordered_map<std::string_view, const Stop*> all_stops_map_;     // Словарь остановок (словарь с хэш-функцией)
-		
-		std::deque<Route> all_buses_data_;                                    // Дек с информацией обо всех маршрутах
-		std::unordered_map<std::string_view, Route*> all_buses_map_;          // Словарь маршрутов (автобусов) (словарь с хэш-функцией)
-		
-		std::unordered_map<std::pair<const Stop*, const Stop*>, size_t, PairPointersHasher> distances_map_; // Словарь расстояний между остановками
+        void AddStop(Stop& stop);
+        void AddBus(Bus& bus);
 
+        Stop* FindStop(std::string name);
+        Bus* FindBus(std::string name);
 
-		// Возвращает string_view с именем остановки по указателю на экземпляр структуры Stop
-		std::string_view GetStopName(const Stop* stop_ptr);
-		// Возвращает string_view с именем остановки для экземпляра структуры Stop
-		std::string_view GetStopName(const Stop stop);
+        Stats GetBusInfo(std::string name);
+        InfoToPrintStop GetStopInfo(std::string_view name);
+        double GetDistance(Stop* A, Stop* B);
 
-		// Возвращает string_view с номером автобуса по указателю на экземпляр структуры Route
-		std::string_view GetBusName(const Route* route_ptr);
-		// Возвращает string_view с номером автобуса для экземпляра структуры Route
-		std::string_view GetBusName(const Route route);
-	};
+        void SetDistance(Stop* A, Stop* B, double distant);
+
+    private:
+        std::deque<Stop> stops;
+        std::deque<Bus> buses;
+        std::unordered_map<Stop*, std::set<std::string_view>>stop_wiht_bus;
+        std::unordered_map<std::string_view, Stop*> stopname_to_stop;
+        std::unordered_map<std::string_view, Bus*> busname_to_bus;
+        std::unordered_map<const StopToStop, double, TransportCatalogueHasher> stop_distance;
+    };
 }
-
