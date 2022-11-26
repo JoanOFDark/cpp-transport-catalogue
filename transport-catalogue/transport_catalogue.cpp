@@ -13,22 +13,17 @@ namespace TransportsCatalogue {
         return &buses;
     }
 
-    std::unordered_map<std::string_view, Stop*>* TransportCatalogue::get_stopname_to_stop()
+    std::unordered_map<std::string_view, Stop*>* TransportCatalogue::GetStopNameToStop()
     {
         return  &stopname_to_stop;
     }
 
-    std::unordered_map<std::string_view, Bus*>* TransportCatalogue::get_busname_to_bus()
+    std::unordered_map<Stop*, std::set<std::string_view>>* TransportCatalogue::GetStopWithBus()
     {
-        return &busname_to_bus;
+        return &stop_with_bus;
     }
 
-    std::unordered_map<Stop*, std::set<std::string_view>>* TransportCatalogue::get_stop_wiht_bus()
-    {
-        return &stop_wiht_bus;
-    }
-
-    std::unordered_map<const StopToStop, double, TransportCatalogueHasher>* TransportCatalogue::get_stop_distance()
+    std::unordered_map<const StopToStop, double, TransportCatalogueHasher>* TransportCatalogue::GetStopDistance()
     {
         return &stop_distance;
     }
@@ -44,7 +39,7 @@ namespace TransportsCatalogue {
         for (Stop& temp_stop : stops)
         {
             for (const auto& item : temp_stop.road_distances)
-                SetDistance(&temp_stop, get_stopname_to_stop()->at(item.first), item.second);
+                SetDistance(&temp_stop, GetStopNameToStop()->at(item.first), item.second);
         }
     }
 
@@ -59,7 +54,7 @@ namespace TransportsCatalogue {
         for (Bus& temp_bus : buses)
         {
             for (auto& BussStop : temp_bus.busStop) {
-                stop_wiht_bus[BussStop].insert(temp_bus.name);
+                stop_with_bus[BussStop].insert(temp_bus.name);
             }
         }
 
@@ -75,7 +70,7 @@ namespace TransportsCatalogue {
         busname_to_bus[bus.name] = &bus;
     }
 
-    Bus* TransportCatalogue::FindBus(std::string name)
+    Bus* TransportCatalogue::FindBus(const std::string& name)
     {
         if (busname_to_bus.count(name) != 0) {
             return busname_to_bus[name];
@@ -83,7 +78,7 @@ namespace TransportsCatalogue {
         return nullptr;
     }
 
-    Stats TransportCatalogue::GetBusInfo(std::string bus_name)
+    Stats TransportCatalogue::GetBusInfo(const std::string& bus_name)
     {
         Stats stats{};
         if (busname_to_bus.count(bus_name) == 0) {
@@ -121,8 +116,8 @@ namespace TransportsCatalogue {
         InfoToPrintStop item;
         if (stopname_to_stop.count(name) != 0) {
             item.stop_exist = true;
-            if (stop_wiht_bus.count(stopname_to_stop.at(name)) != 0) {
-                for (auto& bus : stop_wiht_bus.at(stopname_to_stop.at(name))) {
+            if (stop_with_bus.count(stopname_to_stop.at(name)) != 0) {
+                for (auto& bus : stop_with_bus.at(stopname_to_stop.at(name))) {
                     item.buss.push_back(move(bus));
                 }
             }
@@ -132,19 +127,19 @@ namespace TransportsCatalogue {
 
     void TransportCatalogue::SetDistance(Stop* A, Stop* B, double distant)
     {
-        get_stop_distance()->operator[](StopToStop(A, B)) = distant;
+        GetStopDistance()->operator[](StopToStop(A, B)) = distant;
     }
 
     double TransportCatalogue::GetDistance(Stop* A, Stop* B)
     {
-        if (get_stop_distance()->count(StopToStop(A, B)) != 0)
-            return get_stop_distance()->at(StopToStop(A, B));
+        if (GetStopDistance()->count(StopToStop(A, B)) != 0)
+            return GetStopDistance()->at(StopToStop(A, B));
         else
-            return get_stop_distance()->at(StopToStop(B, A));
+            return GetStopDistance()->at(StopToStop(B, A));
         return 0.0;
     }
 
-    Stop* TransportCatalogue::FindStop(std::string name)
+    Stop* TransportCatalogue::FindStop(const std::string& name)
     {
         if (stopname_to_stop.count(name) != 0) {
             return stopname_to_stop[name];

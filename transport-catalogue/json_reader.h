@@ -9,9 +9,9 @@
 #include <list>
 
 namespace TransportsCatalogue {
-    class JsonReader {
+    class jsonReader {
     public:
-        JsonReader() {
+        jsonReader() {
         }
         void PrepairJson(std::istream& streamDate);
         void GetCatalog(TransportCatalogue& primary);

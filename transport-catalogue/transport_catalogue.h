@@ -25,10 +25,9 @@ namespace TransportsCatalogue {
         TransportCatalogue();
         std::deque<Stop>* GetStops();
         std::deque<Bus>* GetBuses();
-        std::unordered_map<std::string_view, Stop*>* get_stopname_to_stop();
-        std::unordered_map<std::string_view, Bus*>* get_busname_to_bus();
-        std::unordered_map<Stop*, std::set<std::string_view>>* get_stop_wiht_bus();
-        std::unordered_map<const StopToStop, double, TransportCatalogueHasher>* get_stop_distance();
+        std::unordered_map<Stop*, std::set<std::string_view>>* GetStopWithBus();
+        std::unordered_map<const StopToStop, double, TransportCatalogueHasher>* GetStopDistance();
+        std::unordered_map<std::string_view, Stop*>* GetStopNameToStop();
 
         void PrepareStops();
         void PrepareDistance();
@@ -38,10 +37,10 @@ namespace TransportsCatalogue {
         void AddStop(Stop& stop);
         void AddBus(Bus& bus);
 
-        Stop* FindStop(std::string name);
-        Bus* FindBus(std::string name);
+        Stop* FindStop(const std::string& name);
+        Bus* FindBus(const std::string& name);
 
-        Stats GetBusInfo(std::string name);
+        Stats GetBusInfo(const std::string& name);
         InfoToPrintStop GetStopInfo(std::string_view name);
         double GetDistance(Stop* A, Stop* B);
 
@@ -50,7 +49,7 @@ namespace TransportsCatalogue {
     private:
         std::deque<Stop> stops;
         std::deque<Bus> buses;
-        std::unordered_map<Stop*, std::set<std::string_view>>stop_wiht_bus;
+        std::unordered_map<Stop*, std::set<std::string_view>>stop_with_bus;
         std::unordered_map<std::string_view, Stop*> stopname_to_stop;
         std::unordered_map<std::string_view, Bus*> busname_to_bus;
         std::unordered_map<const StopToStop, double, TransportCatalogueHasher> stop_distance;
