@@ -20,7 +20,7 @@ namespace TransportsCatalogue {
     class RequestHandler {
     public:
         RequestHandler(renderer::MapRenderer& Renderer, jsonReader& Requests, TransportCatalogue& Catalogue_);
-        void OutputResult();
+        void ExecuteRequests(std::ostream& output);
 
     private:
         renderer::MapRenderer& Renderer_;

@@ -15,7 +15,7 @@
 
 namespace TransportsCatalogue {
 
-    using color = std::variant<std::string, std::array<int, 3>, std::array<double, 4>>;
+    using Color = std::variant<std::string, std::array<int, 3>, std::array<double, 4>>;
 
     struct Stop {
         std::string name;
@@ -71,7 +71,7 @@ namespace TransportsCatalogue {
         std::vector<Stop*>busStop;
         bool is_roundtrip;
     };
-    struct MapSetting {
+    struct MapSettings {
 
         double width;
         double height;
@@ -82,8 +82,8 @@ namespace TransportsCatalogue {
         std::array<double, 2> bus_label_offset;
         int stop_label_font_size;
         std::array<double, 2> stop_label_offset;
-        color underlayer_color;
+        Color underlayer_color;
         double underlayer_width;
-        std::vector<color> color_palette;
+        std::vector<Color> color_palette;
     };
 }

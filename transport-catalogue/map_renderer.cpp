@@ -13,14 +13,14 @@ namespace TransportsCatalogue {
 
         }
 
-        void MapRenderer::SetMapSetting(jsonReader& MapSet_)
+        void MapRenderer::SetMapSetting(jsonReader& json_reader)
         {
-            MapSet = &MapSet_;
+            MapSet = &json_reader;
         }
 
         void MapRenderer::FillPolyline(svg::Polyline& route, TransportsCatalogue::jsonReader* MapSet, int colorPaletIndex, string& color)
         {
-            MapSetting tempSet = MapSet->GetSetting();
+            MapSettings tempSet = MapSet->GetSetting();
             route.GetFill() = "none";
             if (std::holds_alternative<std::string>(MapSet->GetSetting().color_palette[colorPaletIndex])) {
                 route.GetStroke() = std::get<std::string>(MapSet->GetSetting().color_palette[colorPaletIndex]);
@@ -67,7 +67,7 @@ namespace TransportsCatalogue {
 
         svg::Document MapRenderer::GetMap()
         {
-            MapSetting tempSetting = MapSet->GetSetting();
+            MapSettings tempSetting = MapSet->GetSetting();
             const double WIDTH = tempSetting.width;
             const double HEIGHT = tempSetting.height;
             const double PADDING = tempSetting.padding;
@@ -164,7 +164,7 @@ namespace TransportsCatalogue {
         }
         void MapRenderer::FillText(svg::Document& doc, std::deque<Bus>& orderBus, const Plane::SphereProjector& proj)
         {
-            MapSetting tempSetting = MapSet->GetSetting();
+            MapSettings tempSetting = MapSet->GetSetting();
             for (auto& bus : orderBus) {
                 if (bus.is_roundtrip == true) {
                     svg::Text text_1, text_2;
@@ -190,7 +190,7 @@ namespace TransportsCatalogue {
         }
         void MapRenderer::FillCircle(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj)const
         {
-            MapSetting tempSetting = MapSet->GetSetting();
+            MapSettings tempSetting = MapSet->GetSetting();
             for (auto& stop : stops) {
                 svg::Circle Point;
                 Point.SetRadius(tempSetting.stop_radius);
@@ -225,7 +225,7 @@ namespace TransportsCatalogue {
             }
         }
 
-        string MapRenderer::ColorToText(const TransportsCatalogue::MapSetting& settings)
+        string MapRenderer::ColorToText(const TransportsCatalogue::MapSettings& settings)
         {
             std::string str1;
             if (std::holds_alternative<std::string>(settings.underlayer_color)) {
@@ -264,7 +264,7 @@ namespace TransportsCatalogue {
             return str1;
         }
 
-        void MapRenderer::PrepareText(svg::Text& temp, bool zaliv, const std::string& busName, const std::string& color, const MapSetting& tempSetting)
+        void MapRenderer::PrepareText(svg::Text& temp, bool zaliv, const std::string& busName, const std::string& color, const MapSettings& tempSetting)
         {
             temp.zaliv = zaliv;
             temp.SetData(busName);
@@ -279,7 +279,7 @@ namespace TransportsCatalogue {
             temp.SetOffset(svg::Point(tempSetting.bus_label_offset[0], tempSetting.bus_label_offset[1]));
 
         }
-        void MapRenderer::PrepareTextStop(svg::Text& temp, bool zaliv, std::string busName, std::string color, const MapSetting& tempSetting, const Stop stop, const Plane::SphereProjector& proj)
+        void MapRenderer::PrepareTextStop(svg::Text& temp, bool zaliv, std::string busName, std::string color, const MapSettings& tempSetting, const Stop stop, const Plane::SphereProjector& proj)
         {
             temp.zaliv = zaliv;
             temp.SetData(busName);
@@ -309,7 +309,7 @@ namespace TransportsCatalogue {
             }
         }
         
-        void MapRenderer::MainPrepareText(svg::Text& temp, svg::Document& doc, bool zalivka, bool ring, const Bus& bus, const Plane::SphereProjector& proj, const MapSetting& tempSetting)
+        void MapRenderer::MainPrepareText(svg::Text& temp, svg::Document& doc, bool zalivka, bool ring, const Bus& bus, const Plane::SphereProjector& proj, const MapSettings& tempSetting)
         {
             if (ring) {
                 if (zalivka) {

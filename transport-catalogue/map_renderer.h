@@ -95,19 +95,19 @@ namespace TransportsCatalogue {
         class MapRenderer {
         public:
             MapRenderer(TransportCatalogue& db);
-            void SetMapSetting(jsonReader& MapSer_);
+            void SetMapSetting(jsonReader& json_reader);
             void FillPolyline(svg::Polyline& route, jsonReader* MapSet, int colorPaletIndex, std::string& color);
             svg::Document GetMap();
             void FillText(svg::Document& doc, std::deque<Bus>& orderBus, const TransportsCatalogue::Plane::SphereProjector& proj);
             void FillCircle(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj) const;
-            std::string ColorToText(const MapSetting& settings);
-            void  PrepareText(svg::Text& temp, bool zaliv, const std::string& busName, const std::string& color, const MapSetting& tempSetting);
+            std::string ColorToText(const MapSettings& settings);
+            void  PrepareText(svg::Text& temp, bool zaliv, const std::string& busName, const std::string& color, const MapSettings& tempSetting);
             void  PrepareTextCoordinatsRing(svg::Text& temp, const Bus& bus, const Plane::SphereProjector& proj);
             bool  FindDuplicate(Stop item, std::vector<Stop>& stops)const;
             void  PrepareTextCoordinatsNotRing(svg::Text& temp, const Bus& bus, const Plane::SphereProjector& proj, int lastStop, int stop_num);
-            void  MainPrepareText(svg::Text& temp, svg::Document& doc, bool zalivka, bool ring, const Bus& bus, const Plane::SphereProjector& proj, const MapSetting& tempSetting);
+            void  MainPrepareText(svg::Text& temp, svg::Document& doc, bool zalivka, bool ring, const Bus& bus, const Plane::SphereProjector& proj, const MapSettings& tempSetting);
             void  FillTextStop(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj);
-            void  PrepareTextStop(svg::Text& temp, bool zaliv, std::string busName, std::string color, const MapSetting& tempSetting, const Stop stop, const Plane::SphereProjector& proj);
+            void  PrepareTextStop(svg::Text& temp, bool zaliv, std::string busName, std::string color, const MapSettings& tempSetting, const Stop stop, const Plane::SphereProjector& proj);
             void  PrintMap(std::string& str);
 
         private:

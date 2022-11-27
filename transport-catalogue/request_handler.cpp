@@ -9,26 +9,26 @@ TransportsCatalogue::RequestHandler::RequestHandler(renderer::MapRenderer& Rende
 
 }
 
-void TransportsCatalogue::RequestHandler::OutputResult()
+void TransportsCatalogue::RequestHandler::ExecuteRequests(std::ostream& output)
 {
 
     int i = 0;
     if (Requests_.GetReqInf().size() != 0)
     {
-        std::cout << "[" << std::endl;
+        output << "[" << std::endl;
 
         for (auto& item : Requests_.GetReqInf())
         {
-            if (i > 0) { std::cout << "," << std::endl;; }
+            if (i > 0) { output << "," << std::endl;; }
             ++i;
             if (item.type == "Map") {
-                std::cout << "    {" << endl;
+                output << "    {" << endl;
 
-                std::cout << "        \"" << "map" << "\": " << "\"";
+                output << "        \"" << "map" << "\": " << "\"";
                 Renderer_.GetMap();
-                std::cout << "\"," << std::endl;
-                std::cout << "        \"" << "request_id" << "\": " << std::to_string(item.id) << endl;
-                std::cout << "    }";
+                output << "\"," << std::endl;
+                output << "        \"" << "request_id" << "\": " << std::to_string(item.id) << endl;
+                output << "    }";
 
             }
 
@@ -39,6 +39,6 @@ void TransportsCatalogue::RequestHandler::OutputResult()
                 Requests_.PrintInfoBus(Catalogue_.GetBusInfo(item.name), std::to_string((item.id)));
             }
         }
-        std::cout << std::endl << "]";
+        output << std::endl << "]";
     }
 }

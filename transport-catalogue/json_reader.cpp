@@ -3,10 +3,10 @@
 
 namespace TransportsCatalogue {
 
-    void jsonReader::PrepairJson(std::istream& streamDate)
+    void jsonReader::PrepairJSON(std::istream& streamDate)
     {
         Doc = json::Load(streamDate);
-        FillingCatalogy();
+        FillCatalogy();
     }
 
     void jsonReader::GetCatalog(TransportCatalogue& primary)
@@ -154,7 +154,7 @@ namespace TransportsCatalogue {
 
     }
 
-    void jsonReader::FillingCatalogy()
+    void jsonReader::FillCatalogy()
     {
         json::NodeJson temp = Doc.GetRoot().GetData();
         json::Dict inf = Doc.GetRoot().AsMap();
@@ -203,12 +203,12 @@ namespace TransportsCatalogue {
 
     }
 
-    MapSetting& jsonReader::GetSetting()
+    MapSettings& jsonReader::GetSetting()
     {
         return Mapset;
     }
 
-    void jsonReader::PrintInfoStop(InfoToPrintStop item, std::string request_id)
+    void jsonReader::PrintInfoStop(InfoToPrintStop item, const std::string& request_id)
     {
         if (item.stop_exist) {
             std::cout << "    {" << std::endl << "        \""
@@ -237,7 +237,7 @@ namespace TransportsCatalogue {
         }
     }
 
-    void jsonReader::PrintInfoBus(Stats item, std::string request_id)
+    void jsonReader::PrintInfoBus(Stats item, const std::string& request_id)
     {
         if (item.route_length == 0 && item.route_length2 == 0 && item.stops == 0 && item.unique_stops == 0) {
             std::cout << "    {" << std::endl << "        \"" << "request_id" << "\"" << ": " << request_id << ","
