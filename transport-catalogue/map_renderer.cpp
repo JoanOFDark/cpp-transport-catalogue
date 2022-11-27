@@ -13,12 +13,12 @@ namespace TransportsCatalogue {
 
         }
 
-        void MapRenderer::SetMapSetting(jsonReader& json_reader)
+        void MapRenderer::SetMapSetting(JSONReader& json_reader)
         {
             MapSet = &json_reader;
         }
 
-        void MapRenderer::FillPolyline(svg::Polyline& route, TransportsCatalogue::jsonReader* MapSet, int colorPaletIndex, string& color)
+        void MapRenderer::FillPolyline(svg::Polyline& route, TransportsCatalogue::JSONReader* MapSet, int colorPaletIndex, string& color)
         {
             MapSettings tempSet = MapSet->GetSetting();
             route.GetFill() = "none";

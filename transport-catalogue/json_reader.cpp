@@ -3,18 +3,18 @@
 
 namespace TransportsCatalogue {
 
-    void jsonReader::PrepairJSON(std::istream& streamDate)
+    void JSONReader::PrepareJSON(std::istream& streamDate)
     {
         Doc = json::Load(streamDate);
-        FillCatalogy();
+        FillCatalogue();
     }
 
-    void jsonReader::GetCatalog(TransportCatalogue& primary)
+    void JSONReader::GetCatalogue(TransportCatalogue& primary)
     {
         Temp = &primary;
     }
 
-    void jsonReader::GetInfoBus(const json::Node& Businf)
+    void JSONReader::GetInfoBus(const json::Node& Businf)
     {
         TransportsCatalogue::Bus bus;
         std::list<std::string> revers;
@@ -44,7 +44,7 @@ namespace TransportsCatalogue {
 
     }
 
-    void jsonReader::GetInfoStop(const json::Node& StopInf)
+    void JSONReader::GetInfoStop(const json::Node& StopInf)
     {
         TransportsCatalogue::Stop stop;
         json::Dict temp = StopInf.AsMap();
@@ -60,7 +60,7 @@ namespace TransportsCatalogue {
 
     }
 
-    void jsonReader::GetReqInf(const json::Node& ReqItem)
+    void JSONReader::GetReqInf(const json::Node& ReqItem)
     {
         json::Dict temp = ReqItem.AsMap();
         StatRequest item;
@@ -71,7 +71,7 @@ namespace TransportsCatalogue {
         ReqInf.push_back(item);
     }
 
-    void jsonReader::GetMapInfo(const json::Node& MapItem)
+    void JSONReader::GetMapInfo(const json::Node& MapItem)
     {
         json::Dict temp = MapItem.AsMap();
         Mapset.width = temp.at("width").AsDouble();
@@ -154,7 +154,7 @@ namespace TransportsCatalogue {
 
     }
 
-    void jsonReader::FillCatalogy()
+    void JSONReader::FillCatalogue()
     {
         json::NodeJson temp = Doc.GetRoot().GetData();
         json::Dict inf = Doc.GetRoot().AsMap();
@@ -203,12 +203,12 @@ namespace TransportsCatalogue {
 
     }
 
-    MapSettings& jsonReader::GetSetting()
+    MapSettings& JSONReader::GetSetting()
     {
         return Mapset;
     }
 
-    void jsonReader::PrintInfoStop(InfoToPrintStop item, const std::string& request_id)
+    void JSONReader::PrintInfoStop(InfoToPrintStop item, const std::string& request_id)
     {
         if (item.stop_exist) {
             std::cout << "    {" << std::endl << "        \""
@@ -237,7 +237,7 @@ namespace TransportsCatalogue {
         }
     }
 
-    void jsonReader::PrintInfoBus(Stats item, const std::string& request_id)
+    void JSONReader::PrintInfoBus(Stats item, const std::string& request_id)
     {
         if (item.route_length == 0 && item.route_length2 == 0 && item.stops == 0 && item.unique_stops == 0) {
             std::cout << "    {" << std::endl << "        \"" << "request_id" << "\"" << ": " << request_id << ","
@@ -257,7 +257,7 @@ namespace TransportsCatalogue {
 
     }
 
-    std::vector<StatRequest> jsonReader::GetReqInf()
+    std::vector<StatRequest> JSONReader::GetReqInf()
     {
         return ReqInf;
     }

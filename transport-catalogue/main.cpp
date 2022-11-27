@@ -15,12 +15,12 @@ using namespace std;
 
 int main() {
 
-    TransportsCatalogue::jsonReader GetInf;
+    TransportsCatalogue::JSONReader GetInf;
     TransportsCatalogue::TransportCatalogue A;
     TransportsCatalogue::renderer::MapRenderer Map(A);
     Map.SetMapSetting(GetInf);
-    GetInf.GetCatalog(A);
-    GetInf.PrepairJSON(std::cin);
+    GetInf.GetCatalogue(A);
+    GetInf.PrepareJSON(std::cin);
     TransportsCatalogue::RequestHandler Manager(Map, GetInf, A);
     Manager.ExecuteRequests(std::cout);
 

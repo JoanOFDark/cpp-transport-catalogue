@@ -3,7 +3,7 @@
 using namespace std;
 
 
-TransportsCatalogue::RequestHandler::RequestHandler(renderer::MapRenderer& Renderer, TransportsCatalogue::jsonReader& Requests, TransportCatalogue& Catalogue)
+TransportsCatalogue::RequestHandler::RequestHandler(renderer::MapRenderer& Renderer, TransportsCatalogue::JSONReader& Requests, TransportCatalogue& Catalogue)
     :Renderer_(Renderer), Requests_(Requests), Catalogue_(Catalogue)
 {
 

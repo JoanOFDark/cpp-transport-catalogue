@@ -95,8 +95,8 @@ namespace TransportsCatalogue {
         class MapRenderer {
         public:
             MapRenderer(TransportCatalogue& db);
-            void SetMapSetting(jsonReader& json_reader);
-            void FillPolyline(svg::Polyline& route, jsonReader* MapSet, int colorPaletIndex, std::string& color);
+            void SetMapSetting(JSONReader& json_reader);
+            void FillPolyline(svg::Polyline& route, JSONReader* MapSet, int colorPaletIndex, std::string& color);
             svg::Document GetMap();
             void FillText(svg::Document& doc, std::deque<Bus>& orderBus, const TransportsCatalogue::Plane::SphereProjector& proj);
             void FillCircle(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj) const;
@@ -112,7 +112,7 @@ namespace TransportsCatalogue {
 
         private:
             TransportCatalogue& Temp;
-            jsonReader* MapSet;
+            JSONReader* MapSet;
             std::map<std::string, std::string> busWithColor;
         };
 

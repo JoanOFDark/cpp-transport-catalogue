@@ -9,17 +9,17 @@
 #include <list>
 
 namespace TransportsCatalogue {
-    class jsonReader {
+    class JSONReader {
     public:
-        jsonReader() {
+        JSONReader() {
         }
-        void PrepairJSON(std::istream& streamDate);
-        void GetCatalog(TransportCatalogue& primary);
+        void PrepareJSON(std::istream& streamDate);
+        void GetCatalogue(TransportCatalogue& primary);
         void GetInfoBus(const json::Node& Businf);
         void GetInfoStop(const json::Node& Stop);
         void GetReqInf(const json::Node& ReqItem);
         void GetMapInfo(const json::Node& MapItem);
-        void FillCatalogy();
+        void FillCatalogue();
         MapSettings& GetSetting();
 
         void PrintInfoStop(InfoToPrintStop item, const std::string& request_id);
