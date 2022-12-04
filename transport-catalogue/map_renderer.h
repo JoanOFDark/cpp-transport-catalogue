@@ -97,7 +97,7 @@ namespace TransportsCatalogue {
             MapRenderer(TransportCatalogue& db);
             void SetMapSetting(JSONReader& json_reader);
             void FillPolyline(svg::Polyline& route, JSONReader* MapSet, int colorPaletIndex, std::string& color);
-            svg::Document GetMap();
+            std::string GetMap();
             void FillText(svg::Document& doc, std::deque<Bus>& orderBus, const TransportsCatalogue::Plane::SphereProjector& proj);
             void FillCircle(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj) const;
             std::string ColorToText(const MapSettings& settings);
@@ -108,7 +108,7 @@ namespace TransportsCatalogue {
             void  MainPrepareText(svg::Text& temp, svg::Document& doc, bool zalivka, bool ring, const Bus& bus, const Plane::SphereProjector& proj, const MapSettings& tempSetting);
             void  FillTextStop(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj);
             void  PrepareTextStop(svg::Text& temp, bool zaliv, std::string busName, std::string color, const MapSettings& tempSetting, const Stop stop, const Plane::SphereProjector& proj);
-            void  PrintMap(std::string& str);
+            std::string PrintMap(std::string& str);
 
         private:
             TransportCatalogue& Temp;

@@ -7,6 +7,7 @@
 #include "map_renderer.h"
 #include "iostream"
 #include "json_reader.h"
+#include "json_builder.h"
 
 #include <iostream>
 #include <algorithm>
@@ -19,12 +20,12 @@
 namespace TransportsCatalogue {
     class RequestHandler {
     public:
-        RequestHandler(renderer::MapRenderer& Renderer, JSONReader& Requests, TransportCatalogue& Catalogue_);
-        void ExecuteRequests(std::ostream& output);
+        RequestHandler(renderer::MapRenderer& renderer, JSONReader& requests, TransportCatalogue& catalogue_);
+        void ExecuteRequests();
 
     private:
-        renderer::MapRenderer& Renderer_;
-        JSONReader& Requests_;
-        TransportCatalogue& Catalogue_;
+        renderer::MapRenderer& renderer_;
+        JSONReader& requests_;
+        TransportCatalogue& catalogue_;
     };
 }

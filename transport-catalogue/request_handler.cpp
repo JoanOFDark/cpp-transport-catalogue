@@ -3,42 +3,77 @@
 using namespace std;
 
 
-TransportsCatalogue::RequestHandler::RequestHandler(renderer::MapRenderer& Renderer, TransportsCatalogue::JSONReader& Requests, TransportCatalogue& Catalogue)
-    :Renderer_(Renderer), Requests_(Requests), Catalogue_(Catalogue)
+TransportsCatalogue::RequestHandler::RequestHandler(renderer::MapRenderer& renderer, TransportsCatalogue::JSONReader& requests, TransportCatalogue& catalogue)
+    :renderer_(renderer), requests_(requests), catalogue_(catalogue)
 {
 
 }
 
-void TransportsCatalogue::RequestHandler::ExecuteRequests(std::ostream& output)
+void TransportsCatalogue::RequestHandler::ExecuteRequests()
 {
-
-    int i = 0;
-    if (Requests_.GetReqInf().size() != 0)
+    json::Array arr;
+    if (requests_.GetReqInf().size() != 0)
     {
-        output << "[" << std::endl;
-
-        for (auto& item : Requests_.GetReqInf())
+        for (auto& item : requests_.GetReqInf())
         {
-            if (i > 0) { output << "," << std::endl;; }
-            ++i;
             if (item.type == "Map") {
-                output << "    {" << endl;
-
-                output << "        \"" << "map" << "\": " << "\"";
-                Renderer_.GetMap();
-                output << "\"," << std::endl;
-                output << "        \"" << "request_id" << "\": " << std::to_string(item.id) << endl;
-                output << "    }";
-
+                json::Dict tem;
+                tem["map"] = renderer_.GetMap();
+                tem["request_id"] = item.id;
+                arr.push_back(tem);
             }
-
             if (item.type == "Stop") {
-                Requests_.PrintInfoStop(Catalogue_.GetStopInfo(item.name), std::to_string(item.id));
+                InfoToPrintStop temp_info = catalogue_.GetStopInfo(item.name);
+                if (temp_info.stop_exist) {
+                    json::Dict tem;
+                    json::Array busss;
+                    for (auto& it : temp_info.buss) {
+                        busss.push_back(string(it));
+                    }
+                    tem["buses"] = busss;
+                    tem["request_id"] = item.id;
+                    arr.push_back(tem);
+
+                }
+                else {
+                    json::Dict tem;
+                    tem["request_id"] = item.id;
+                    tem["error_message"] = "not found";
+                    arr.push_back(tem);
+                }
+
             }
             if (item.type == "Bus") {
-                Requests_.PrintInfoBus(Catalogue_.GetBusInfo(item.name), std::to_string((item.id)));
+                Stats temp_info = catalogue_.GetBusInfo(item.name);
+                if (temp_info.route_length == 0 && temp_info.route_length2 == 0 && temp_info.stops == 0 && temp_info.unique_stops == 0) {
+                    json::Dict tem;
+                    tem["request_id"] = item.id;
+                    tem["error_message"] = "not found";
+                    arr.push_back(tem);
+
+                }
+                else {
+                    json::Dict tem;
+                    tem["curvature"] = temp_info.route_length2;
+                    tem["request_id"] = item.id;
+                    tem["route_length"] = temp_info.route_length;
+                    tem["stop_count"] = temp_info.stops;
+                    tem["unique_stop_count"] = temp_info.unique_stops;
+                    arr.push_back(tem);
+
+                }
+
             }
         }
-        output << std::endl << "]";
+        json::Print(
+            json::Document{
+                // Форматирование не имеет формального значения:
+                // это просто цепочка вызовов методов
+                json::Builder{}.Value(arr).Build()
+            },
+            cout
+        );
+
     }
+
 }

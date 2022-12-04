@@ -3,71 +3,84 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 #include <variant>
-#include <algorithm>
-#include <stdexcept>
-#include <cstdio>
-#include <iostream>
-#include <stdio.h>
+#include <vector>
 
 namespace json {
 
     class Node;
-    // Сохраните объявления Dict и Array без изменения
     using Dict = std::map<std::string, Node>;
     using Array = std::vector<Node>;
-    using NodeJson = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
-    inline const std::string NoneData{ "null" };
-    // Эта ошибка должна выбрасываться при ошибках парсинга JSON
+
     class ParsingError : public std::runtime_error {
     public:
         using runtime_error::runtime_error;
     };
 
-    class Node {
+    class Node final
+        : private std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string> {
     public:
-        explicit Node() = default;
-        template<typename T>
-        Node(T value) {
-            node = value;
+        using variant::variant;
+        using Value = variant;
+
+        Node(Value value) : std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>(value) {
+
         }
-        bool operator == (const Node& rhs) const;
-        bool operator != (const Node& rhs) const;
-        bool IsNull() const;
+
         bool IsInt() const;
-        bool IsDouble() const;
         bool IsPureDouble() const;
-        bool IsString() const;
+        bool IsDouble() const;
         bool IsBool() const;
+        bool IsNull() const;
         bool IsArray() const;
+        bool IsString() const;
         bool IsMap() const;
 
-        double AsDouble() const;
-        bool AsBool() const;
-        int AsInt() const;
-
         const Array& AsArray() const;
-        const Dict& AsMap() const;
-        const std::string& AsString() const;
-        const  NodeJson& GetData() const;
+        bool AsBool() const;
+        double AsDouble() const;
+        int AsInt() const;
+        Array& AsArrayNotConst();
 
-    private:
-        NodeJson node;
+
+        const std::string& AsString() const;
+
+        bool IsDict() const;
+        const Dict& AsDict() const;
+        Dict& AsDictNotConst();
+
+        bool operator==(const Node& rhs) const;
+
+        const Dict& AsMap() const;
+
+        const Value& GetValue() const;
+        Value& GetValueNotConst();
+
     };
+
+    inline bool operator!=(const Node& lhs, const Node& rhs);
 
     class Document {
     public:
-        explicit Document(Node root);
+        explicit Document(Node root)
+            : root_(std::move(root)) {
+        }
         Document() {};
-
-        bool operator == (const Document& rhs) const;
-        bool operator != (const Document& rhs) const;
-        const Node& GetRoot() const;
+        const Node& GetRoot() const {
+            return root_;
+        }
 
     private:
         Node root_;
     };
+
+    inline bool operator==(const Document& lhs, const Document& rhs) {
+        return lhs.GetRoot() == rhs.GetRoot();
+    }
+
+    inline bool operator!=(const Document& lhs, const Document& rhs) {
+        return !(lhs == rhs);
+    }
 
     Document Load(std::istream& input);
 

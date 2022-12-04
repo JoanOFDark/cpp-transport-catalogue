@@ -22,7 +22,7 @@ int main() {
     GetInf.GetCatalogue(A);
     GetInf.PrepareJSON(std::cin);
     TransportsCatalogue::RequestHandler Manager(Map, GetInf, A);
-    Manager.ExecuteRequests(std::cout);
+    Manager.ExecuteRequests();
 
     return 0;
 }

@@ -156,7 +156,7 @@ namespace TransportsCatalogue {
 
     void JSONReader::FillCatalogue()
     {
-        json::NodeJson temp = Doc.GetRoot().GetData();
+        json::Node::Value temp = Doc.GetRoot().GetValue();
         json::Dict inf = Doc.GetRoot().AsMap();
         std::vector<json::Node>requestBus;
         for (auto& a : inf) {

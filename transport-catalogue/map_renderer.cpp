@@ -65,7 +65,7 @@ namespace TransportsCatalogue {
 
         }
 
-        svg::Document MapRenderer::GetMap()
+        std::string MapRenderer::GetMap()
         {
             MapSettings tempSetting = MapSet->GetSetting();
             const double WIDTH = tempSetting.width;
@@ -146,7 +146,7 @@ namespace TransportsCatalogue {
             str += strs.str();
             PrintMap(str);
 
-            return doc;
+            return PrintMap(str);
         }
 
         void MapRenderer::FillTextStop(std::vector<Stop>& stops, svg::Document& doc, const Plane::SphereProjector& proj)
@@ -202,27 +202,30 @@ namespace TransportsCatalogue {
 
         }
        
-        void MapRenderer::PrintMap(string& str)
+        std::string MapRenderer::PrintMap(string& str)
         {
+            std::string str_temp;
             for (auto c : str) {
                 if (c == '\"') {
-                    cout << '\\';
-                    std::cout << c;
+                    str_temp += '\\';
+                    str_temp += c;
                 }
                 else
                     if (c == '\\') {
-                        cout << '\\';
-                        cout << '\\';
-                        std::cout << c;
+                        str_temp += '\\';
+                        str_temp += '\\';
+                        str_temp += c;
                     }
                     else
                         if (c == '\n') {
-                            std::cout << '\\' << 'n';
+                            str_temp += '\\';
+                            str_temp += 'n';
                         }
                         else {
-                            std::cout << c;
+                            str_temp += c;
                         }
             }
+            return str;
         }
 
         string MapRenderer::ColorToText(const TransportsCatalogue::MapSettings& settings)
