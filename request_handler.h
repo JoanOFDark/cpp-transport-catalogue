@@ -31,8 +31,7 @@ namespace transport_catalogue {
         renderer::MapRenderer& renderer_;
         JSONReader& requests_;
         TransportCatalogue& catalogue_;
-        TransportRouter& router_;
-        graph::Router<double> route_;
-
+        TransportRouter& transport_router_;
+        graph::Router<double> router_;
     };
 }

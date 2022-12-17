@@ -24,11 +24,11 @@ namespace transport_catalogue {
         edges.push_back(temp);
     }
 
-    void TransportRouter::Result(size_t from, size_t to, double& total_time, std::vector<InfoToPrintRoute>& res, graph::Router<double>& route)
+    void TransportRouter::Result(size_t from, size_t to, double& total_time, std::vector<InfoToPrintRoute>& res)
     {
-        if (route.BuildRoute(from, to).has_value()) {
-            total_time = route.BuildRoute(from, to).value().weight;
-            auto vect = route.BuildRoute(from, to).value().edges;
+        if ((*router_).BuildRoute(from, to).has_value()) {
+            total_time = (*router_).BuildRoute(from, to).value().weight;
+            auto vect = (*router_).BuildRoute(from, to).value().edges;
 
             for (size_t i = 0; i < vect.size(); ++i)
             {
@@ -137,16 +137,20 @@ namespace transport_catalogue {
                 }
             }
         }
-        graph::DirectedWeightedGraph<double> Graf(catalogue_.GetStops()->size());
+        graph::DirectedWeightedGraph<double> graph(catalogue_.GetStops()->size());
         for (auto& it : edges_) {
-            Graf.AddEdge(it);
+            graph.AddEdge(it);
         }
-        graph_ = std::move(Graf);
+        graph_ = std::move(graph);
 
     }
 
     graph::DirectedWeightedGraph<double>& TransportRouter::ReturnGraph()
     {
         return graph_;
+    }
+
+    void TransportRouter::SetRouter(graph::Router<double> router) {
+        router_ = std::make_unique<graph::Router<double>>(router);
     }
 }

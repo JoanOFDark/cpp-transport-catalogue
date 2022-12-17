@@ -3,7 +3,7 @@
 using namespace std;
 
 transport_catalogue::RequestHandler::RequestHandler(renderer::MapRenderer& renderer, transport_catalogue::JSONReader& requests, TransportCatalogue& catalogue, TransportRouter& router)
-    :renderer_(renderer), requests_(requests), catalogue_(catalogue), router_(router), route_(router_.ReturnGraph())
+    :renderer_(renderer), requests_(requests), catalogue_(catalogue), transport_router_(router), router_(transport_router_.ReturnGraph())
 {}
 
 void transport_catalogue::RequestHandler::ExecuteRequests()
@@ -71,7 +71,8 @@ void transport_catalogue::RequestHandler::ExecuteRequests()
                 to = catalogue_.GetStopNameToStop()->at(item.to)->id;
                 double weit_total = 0;
 
-                router_.Result(from, to, weit_total, res, route_);
+                transport_router_.SetRouter(router_);
+                transport_router_.Result(from, to, weit_total, res);
 
                 if (from == to) {
                     items["items"] = itemsIntoItems;

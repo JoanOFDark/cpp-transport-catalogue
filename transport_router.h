@@ -26,11 +26,12 @@ namespace transport_catalogue {
     public:
         TransportRouter(TransportCatalogue& tc);
         void SetRouterSettings(JSONReader& router_settings);
+        void SetRouter(graph::Router<double> router);
         void PrepareGraph();
         graph::DirectedWeightedGraph<double>& ReturnGraph();
 
         void PrepareEdges(std::vector<graph::Edge<double>>& edges, VertexId from, VertexId to, double weight);
-        void Result(size_t from, size_t to, double& total_time, std::vector<InfoToPrintRoute>& res, graph::Router<double>& route);
+        void Result(size_t from, size_t to, double& total_time, std::vector<InfoToPrintRoute>& res);
         void PrepareOneEdgeInfo(const std::string& bus, int span_count, double time, size_t from, size_t to);
         void PrepareStops();
 
@@ -42,7 +43,7 @@ namespace transport_catalogue {
 
         std::vector<graph::Edge<double>> edges_;
         graph::DirectedWeightedGraph<double> graph_;
-
+        std::unique_ptr<graph::Router<double>> router_;
     };
 
 }
