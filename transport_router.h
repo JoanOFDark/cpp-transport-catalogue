@@ -1,49 +1,81 @@
 #pragma once
 
-#include "geo.h"
-#include "domain.h"
-#include "ranges.h"
 #include "graph.h"
 #include "router.h"
-#include "json_reader.h"
 #include "transport_catalogue.h"
 
-#include <iostream>
-#include <deque>
-#include <unordered_map>
-#include <vector>
-#include <unordered_set>
-#include <set>
-#include <iterator>
 #include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <unordered_map>
 
-namespace transport_catalogue {
 
-    using VertexId = size_t;
-    using EdgeId = size_t;
+namespace route {
+
+    using namespace transport;
+    using namespace std::literals;
+
+    struct RouteWeight {
+        std::string_view bus_name;
+        double total_time = 0;
+        int span_count = 0;
+    };
+
+    struct RouteSettings {
+        int bus_wait_time = 0;
+        int bus_velocity = 0;
+    };
+
+    bool operator<(const RouteWeight& left, const RouteWeight& right);
+    bool operator>(const RouteWeight& left, const RouteWeight& right);
+    RouteWeight operator+(const RouteWeight& left, const RouteWeight& right);
 
     class TransportRouter {
     public:
-        TransportRouter(TransportCatalogue& tc);
-        void SetRouterSettings(JSONReader& router_settings);
-        void SetRouter(graph::Router<double> router);
-        void PrepareGraph();
-        graph::DirectedWeightedGraph<double>& ReturnGraph();
 
-        void PrepareEdges(std::vector<graph::Edge<double>>& edges, VertexId from, VertexId to, double weight);
-        void Result(size_t from, size_t to, double& total_time, std::vector<InfoToPrintRoute>& res);
-        void PrepareOneEdgeInfo(const std::string& bus, int span_count, double time, size_t from, size_t to);
-        void PrepareStops();
+        using Graph = graph::DirectedWeightedGraph<RouteWeight>;
+        using Router = graph::Router<RouteWeight>;
 
+        struct RouterEdge {
+            std::string bus_name;
+            std::string stop_from;
+            std::string stop_to;
+            double total_time = 0;
+            int span_count = 0;
+        };
+        using TransportRoute = std::vector<RouterEdge>;
+
+        TransportRouter(const transport::TransportCatalogue& catalogue,
+            const RouteSettings& settings);
+
+        std::optional<TransportRoute> BuildRoute(const std::string& from, const std::string& to);
+
+        const RouteSettings& GetSettings() const;
+        RouteSettings& GetSettings();
+
+        void InitRouter();
+        void InternalInit();
+
+        Graph& GetGraph();
+        const Graph& GetGraph() const;
+
+        std::unique_ptr<Router>& GetRouter();
+        const std::unique_ptr<Router>& GetRouter() const;
     private:
-        JSONReader* router_settings_;
-        TransportCatalogue& catalogue_;
-        std::map<std::pair<size_t, size_t>, InfoEdge> edges_info_;
-        std::map<size_t, std::string> stops_;
 
-        std::vector<graph::Edge<double>> edges_;
-        graph::DirectedWeightedGraph<double> graph_;
-        std::unique_ptr<graph::Router<double>> router_;
+        bool is_initialized_ = false;
+
+        const transport::TransportCatalogue& catalogue_;
+        RouteSettings settings_;
+
+        Graph graph_;
+        mutable std::unique_ptr<Router> router_;
+
+        void BuildEdges();
+        graph::Edge<RouteWeight> BuildEdge(const transport::Bus* bus, int stop_from_index, int stop_to_index);
+        double ComputeTime(const transport::Bus* bus, int stop_from_index, int stop_to_index);
     };
 
 }

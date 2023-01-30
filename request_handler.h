@@ -1,37 +1,49 @@
 #pragma once
 
-#include "json.h"
-#include "domain.h"
-#include "transport_catalogue.h"
-#include "svg.h"
-#include "map_renderer.h"
-#include "json_reader.h"
+#include <memory>
+
 #include "json_builder.h"
+#include "map_renderer.h"
+#include "serialization.h"
+#include "transport_catalogue.h"
 #include "transport_router.h"
-#include "graph.h"
-#include "router.h"
 
-#include <iostream>
-#include <algorithm>
-#include <cstdlib>
-#include <limits>
-#include <iomanip>
-#include <fstream>
+namespace transport {
 
-
-
-namespace transport_catalogue {
     class RequestHandler {
     public:
-        RequestHandler(renderer::MapRenderer& renderer, JSONReader& requests,
-            TransportCatalogue& catalogue, TransportRouter& router);
-        void ExecuteRequests();
+        using Route = route::TransportRouter::TransportRoute;
+
+        RequestHandler(const TransportCatalogue& db);
+
+        std::optional<BusStat> GetBusStat(const std::string& bus_name) const;
+
+        const std::set<std::string_view>* GetBusesThroughStop(const std::string& stop_name) const;
+
+        const svg::Document& RenderMap() const;
+        std::optional<RequestHandler::Route> BuildRoute(const std::string& from, const std::string& to) const;
+
+        json::Document GetJsonResponse(const json::Array& requests) const;
+
+
+        bool SetRouter() const;
+        bool ResetRouter() const;
+        void SetRenderer(renderer::RenderSettings render_settings);
+
+        void Serialize(serialize::Settings settings,
+            std::optional<renderer::RenderSettings> render_settings,
+            std::optional<route::RouteSettings> route_settings);
+
+        void Deserialize(serialize::Settings settings);
 
     private:
-        renderer::MapRenderer& renderer_;
-        JSONReader& requests_;
-        TransportCatalogue& catalogue_;
-        TransportRouter& transport_router_;
-        graph::Router<double> router_;
+        const TransportCatalogue& db_;
+
+        mutable std::unique_ptr<route::TransportRouter> router_;
+        std::unique_ptr<renderer::MapRenderer> renderer_;
+
+        std::optional<route::RouteSettings> routing_settings_;
     };
-}
+
+
+} // transport

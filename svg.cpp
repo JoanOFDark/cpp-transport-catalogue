@@ -1,236 +1,400 @@
-﻿#include "svg.h"
+﻿#include <sstream>
+
+
+
+
+#include "svg.h"
+
+
+
 
 namespace svg {
 
+
+
+
     using namespace std::literals;
 
+
+
+
     void Object::Render(const RenderContext& context) const {
+
         context.RenderIndent();
 
+
+
+
         // Делегируем вывод тега своим подклассам
+
         RenderObject(context);
 
+
+
+
         context.out << std::endl;
+
     }
+
+
+
 
     // ---------- Circle ------------------
 
+
+
+
     Circle& Circle::SetCenter(Point center) {
+
         center_ = center;
+
         return *this;
+
     }
+
+
+
 
     Circle& Circle::SetRadius(double radius) {
+
         radius_ = radius;
+
         return *this;
+
     }
 
-    Circle& Circle::SetFill(std::string fill_)
-    {
-        fill = fill_;
-        return *this;
-    }
+
+
 
     void Circle::RenderObject(const RenderContext& context) const {
+
         auto& out = context.out;
-        out << "  <circle cx=\""sv << center_.x << "\" cy=\""sv << center_.y << "\" "sv;
+
+        out << "<circle cx=\""sv << center_.x << "\" cy=\""sv << center_.y << "\" "sv;
+
         out << "r=\""sv << radius_ << "\" "sv;
-        out << "fill=\""sv << fill << "\""sv;
+
+        RenderAttrs(out);
+
         out << "/>"sv;
+
     }
 
-    // ---------- Polyline ------------------
 
-    Polyline& Polyline::AddPoint(Point point)
-    {
-        points.push_back(point);
+
+
+    // ---------- Polyline ------------------   
+
+
+
+
+    Polyline& Polyline::AddPoint(Point point) {
+
+        points_.push_back(std::move(point));
+
+
+
+
         return *this;
 
     }
 
-    std::string& Polyline::GetFill()
-    {
-        return fill;
-    }
 
-    std::string& Polyline::GetStroke()
-    {
-        return stroke;
-    }
 
-    std::string& Polyline::GetStroke_width()
-    {
-        return stroke_width;
-    }
 
-    std::string& Polyline::GetStroke_linecap()
-    {
-        return stroke_linecap;
-    }
+    void Polyline::RenderObject(const RenderContext& context) const {
 
-    std::string& Polyline::GetStroke_linejoin()
-    {
-        return stroke_linejoin;
-    }
-
-    void Polyline::RenderObject(const RenderContext& context) const
-    {
         auto& out = context.out;
 
-        out << "  <polyline points=\""sv;
-        for (size_t i = 0; i < points.size(); ++i) {
-            if (i != 0)
-                out << " " << points[i].x << "," << points[i].y;
-            else {
-                out << points[i].x << "," << points[i].y;
+
+
+
+        out << "<polyline points=\""sv;
+
+
+
+
+        for (size_t i = 0; i < points_.size(); ++i) {
+
+            if (i > 0) {
+
+                out << " "sv;
+
             }
 
-        }
-        out << "\"";
 
-        out << " fill=" << "\"" << fill << "\"" << " " << "stroke=" << "\"" << stroke << "\"" << " " << "stroke-width=" << "\"" << stroke_width << "\""
-            << " " << "stroke-linecap=" << "\"" << stroke_linecap << "\"" << " " << "stroke-linejoin=" << "\"" << stroke_linejoin << "\"";
+
+
+            out << points_[i].x << ","sv << points_[i].y;
+
+        }
+
+
+
+
+        out << "\" ";
+
+
+
+
+        RenderAttrs(out);
+
+
+
+
         out << "/>";
-    }
-
-    Text& Text::SetPosition(Point pos)
-    {
-        x = pos.x;
-        y = pos.y;
-        return *this;
 
     }
 
-    Text& Text::SetOffset(Point offset)
-    {
-        dx = offset.x;
-        dy = offset.y;
-        return *this;
-    }
 
-    Text& Text::SetFontSize(uint32_t size)
-    {
-        font = size;
-        return *this;
-    }
 
-    Text& Text::SetFontFamily(std::string font_family)
-    {
-        font_family_ = font_family;
-        return *this;
-    }
 
-    Text& Text::SetFontWeight(std::string font_weight)
-    {
-        font_weight_ = font_weight;
-        return *this;
-    }
+    // ---------- Text ------------------
 
-    Text& Text::SetData(std::string data)
-    {
 
-        size_t s = data.size();
-        data_ = data;
-        for (size_t i = 0; i < s; ++i) {
-            if (data[i] == '\"') {
-                data.erase(i, 1);
-                data.insert(i, "&quot;");
-                s = data.size();
-                i += 6;
+
+
+    std::string escape(std::string_view src) {
+
+        std::stringstream dst;
+
+        for (char ch : src) {
+
+            switch (ch) {
+
+            case '&': dst << "&amp;"; break;
+
+            case '\'': dst << "&apos;"; break;
+
+            case '"': dst << "&quot;"; break;
+
+            case '<': dst << "&lt;"; break;
+
+            case '>': dst << "&gt;"; break;
+
+            default: dst << ch; break;
+
             }
-            if (data[i] == '\'') {
-                data.erase(i, 1);
-                data.insert(i, "&apos;");
-                s = data.size();
-                i += 6;
-            }
-            if (data[i] == '<') {
-                data.erase(i, 1);
-                data.insert(i, "&lt;");
-                s = data.size();
-                i += 4;
-            }
-            if (data[i] == '>') {
-                data.erase(i, 1);
-                data.insert(i, "&gt;");
-                s = data.size();
-                i += 4;
-            }
-            if (data[i] == '&') {
-                data.erase(i, 1);
-                data.insert(i, "&amp;");
-                s = data.size();
-                i += 5;
-            }
+
         }
 
-        return *this;
+        return dst.str();
+
     }
 
-    Text& Text::SetFill(std::string stoke)
-    {
-        fill = stoke;
+
+
+
+    Text& Text::SetPosition(Point pos) {
+
+        pos_ = std::move(pos);
+
+
+
+
         return *this;
+
     }
 
-    Text& Text::SetStroke(std::string stroke_)
-    {
-        stroke = stroke_;
+
+
+
+    Text& Text::SetOffset(Point offset) {
+
+        offset_ = std::move(offset);
+
+
+
+
         return *this;
+
     }
 
-    Text& Text::SetStroke_width(std::string stroke_)
-    {
-        stroke_width = stroke_;
+
+
+
+    Text& Text::SetFontSize(uint32_t size) {
+
+        font_size_ = size;
+
+
+
+
         return *this;
+
     }
 
-    Text& Text::SetFont_size(std::string stroke_)
-    {
-        font_size = stroke_;
+
+
+
+    Text& Text::SetFontFamily(std::string font_family) {
+
+        font_family_ = std::move(font_family);
+
+
+
+
         return *this;
+
     }
 
-    void Text::RenderObject(const RenderContext& context) const
-    {
+
+
+
+    Text& Text::SetFontWeight(std::string font_weight) {
+
+        font_weight_ = std::move(font_weight);
+
+
+
+
+        return *this;
+
+    }
+
+
+
+
+    Text& Text::SetData(std::string data) {
+
+        data_ = std::move(escape(data));
+
+
+
+
+        return *this;
+
+    }
+
+
+
+
+    void Text::RenderObject(const RenderContext& context) const {
+
         auto& out = context.out;
-        if (zaliv) {
-            out << "  <text fill=\"" << fill << "\"" << " stroke=\"" << stroke << "\"" << " stroke-width=\"" << stroke_width << "\"" << " stroke-linecap=\"" << "round" << "\"";
-            out << " stroke-linejoin=" << "\"" << "round" << "\"" << " x=" << "\"" << x << "\"" << " y=" << "\"" << y << "\"" << " dx=" << "\"" << dx << "\"" << " dy=" << "\"" << dy << "\"";
-            out << " font-size=" << "\"" << font << "\"" << " font-family=" << "\"" << "Verdana";
-            if (font_weight_.size() != 0) {
-                out << "\"" << " font-weight=" << "\"" << font_weight_;
-            }
 
-            out << "\">" << data_ << "</text>";
+        out << "<text x=\""sv << pos_.x << "\" y=\""sv << pos_.y << "\" "sv;
+
+        out << "dx=\""sv << offset_.x << "\" dy=\""sv << offset_.y << "\" "sv;
+
+        out << "font-size=\""sv << font_size_ << "\"";
+
+        if (font_family_) {
+
+            out << " font-family=\""sv << *font_family_ << "\""sv;
+
         }
-        else {
-            out << "  <text fill=" << "\"" << fill << "\"" << " x=" << "\"" << x << "\"" << " y=" << "\"" << y << "\"" << " dx=" << "\"" << dx << "\""
-                << " dy=" << "\"" << dy << "\"" << " font-size=" << "\"" << font << "\"" << " font-family=" << "\"" << "Verdana";
-            if (font_weight_.size() != 0) {
-                out << "\"" << " font-weight=" << "\"" << font_weight_;
-            }
-            out << "\">" << data_ << "</text>";
+
+
+
+
+        if (font_weight_) {
+
+            out << " font-weight=\""sv << *font_weight_ << "\""sv;
+
         }
+
+
+
+
+        RenderAttrs(out);
+
+
+
+
+        out << ">"sv;
+
+        out << data_ << "</text>"sv;
+
     }
 
-    void Document::AddPtr(std::unique_ptr<Object>&& obj)
-    {
-        objects_.push_back(std::move(obj));
+
+
+
+    // ---------- Document ------------------
+
+
+
+
+    void Document::AddPtr(std::unique_ptr<Object>&& obj) {
+
+        svg_objects_.emplace_back(std::move(obj));
+
     }
 
-    void Document::Render(std::ostream& out) const
-    {
+
+
+
+    void Document::Render(std::ostream& out) const {
+
+        RenderContext ctx(out, 2, 2);
+
+
+
 
         out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"sv << std::endl;
+
         out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">"sv << std::endl;
-        for (auto& object : objects_)
-        {
-            object->Render((RenderContext(out)));
+
+
+
+
+        for (auto& svg_obj : svg_objects_) {
+
+            svg_obj->Render(ctx);
+
         }
+
+
+
+
         out << "</svg>"sv;
 
+    }
+
+
+
+
+    void ColorPrinter::operator()(std::monostate) const {
+
+        out << "none"sv;
 
     }
+
+    void ColorPrinter::operator()(std::string color) const {
+
+        out << color;
+
+    }
+
+    void ColorPrinter::operator()(Rgb color) const {
+
+        out << "rgb("sv << int(color.red) << ","sv << int(color.green)
+
+            << ","sv << int(color.blue) << ")"sv;
+
+    }
+
+    void ColorPrinter::operator()(Rgba color) const {
+
+        out << "rgba("sv << int(color.red) << ","sv << int(color.green)
+
+            << ","sv << int(color.blue) << ","sv << color.opacity << ")"sv;
+
+    }
+
+
+
+
+    std::ostream& operator<<(std::ostream& out, Color color) {
+
+        std::visit(ColorPrinter{ out }, color);
+
+        return out;
+
+    }
+
+
+
 
 }  // namespace svg

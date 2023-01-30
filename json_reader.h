@@ -1,39 +1,50 @@
 #pragma once
 
-#include "json.h"
-#include "domain.h"
-#include "transport_catalogue.h"
-
 #include <iostream>
-#include <array>
-#include <list>
 
-namespace transport_catalogue {
-    class JSONReader {
-    public:
-        JSONReader() {}
-        void PrepareJson(std::istream& stream);
-        void GetCatalogue(TransportCatalogue& primary);
-        void GetInfoBus(const json::Node& bus_info);
-        void GetInfoStop(const json::Node& stop);
-        void GetRequestInfo(const json::Node& request_item);
-        void GetMapInfo(const json::Node& map_item);
-        void GetRouterInfo(const json::Node& router_item);
-        void FillCatalogue();
-        MapSettings& GetSetting();
-        RoutingSettings& GetRouterSetting();
+#include "map_renderer.h"
+#include "transport_catalogue.h"
+#include "json.h"
+#include "request_handler.h"
+#include "serialization.h"
+#include "transport_router.h"
 
-        void PrintInfoStop(InfoToPrintStop item, std::string request_id);
-        void PrintInfoBus(Stats item, std::string request_id);
+namespace transport {
 
-        std::vector<StatRequest> GetRequestInfo();
-
+    class JsonReader {
     private:
-        std::vector<StatRequest> requests_;
-        json::Document document_;
-        MapSettings map_settings_;
-        RoutingSettings router_settings_;
-        TransportCatalogue* catalogue_;
+        json::Document json_doc_{ json::Node{nullptr} };
+
+        const json::Array& GetBaseRequests() const;
+
+        const json::Dict& GetRenderSettingsJson() const;
+
+        const json::Array& GetStatRequests() const;
+
+        svg::Color GetColorFromNode(const json::Node& n) const;
+
+        renderer::RenderSettings DictToRenderSettings(const json::Dict& settings_dict) const;
+
+        parsed::Bus DictToBus(const json::Dict& bus_dict) const;
+
+        std::pair<parsed::Stop, parsed::Distances> DictToStopDists(const json::Dict& stop_dict) const;
+
+    public:
+        JsonReader(std::istream& input);
+
+        route::RouteSettings GetRouteSettings() const;
+
+        serialize::Settings GetSerializeSettings() const;
+
+        std::optional<renderer::RenderSettings> GetRenderSettings() const;
+
+        std::optional<route::RouteSettings> GetRouteSettingsOpt() const;
+
+        bool HasRenderSettings() const;
+
+        void FillCatalogue(TransportCatalogue& catalogue) const;
+
+        void PrintJsonResponse(const RequestHandler& handler, std::ostream& out) const;
     };
 
-}
+} // transport

@@ -6,84 +6,63 @@
 #include <variant>
 #include <vector>
 
+// У меня в моей реализации либы json методы не были встроенны, 
+// решил оставить версию от авторов в тренажере, которая была предложена 
+// в заданиях json builder, вернул обратно свою + перенёс реализацию операторов сравнения
+
 namespace json {
 
     class Node;
+
     using Dict = std::map<std::string, Node>;
     using Array = std::vector<Node>;
+    using JsonValue = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
 
     class ParsingError : public std::runtime_error {
     public:
         using runtime_error::runtime_error;
     };
 
-    class Node final
-        : private std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string> {
+    class Node final : JsonValue {
     public:
-        using variant::variant;
-        using Value = variant;
-
-        Node(Value value) : std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>(value) {
-
-        }
-
-        bool IsInt() const;
-        bool IsPureDouble() const;
-        bool IsDouble() const;
-        bool IsBool() const;
-        bool IsNull() const;
-        bool IsArray() const;
-        bool IsString() const;
-        bool IsMap() const;
+        using JsonValue::JsonValue;
 
         const Array& AsArray() const;
-        bool AsBool() const;
-        double AsDouble() const;
-        int AsInt() const;
-        Array& AsArrayNotConst();
-
-
-        const std::string& AsString() const;
-
-        bool IsDict() const;
         const Dict& AsDict() const;
-        Dict& AsDictNotConst();
+        const std::string& AsString() const;
+        int AsInt() const;
+        double AsDouble() const;
+        bool AsBool() const;
+
+        bool IsInt() const;
+        bool IsDouble() const;
+        bool IsPureDouble() const;
+        bool IsBool() const;
+        bool IsString() const;
+        bool IsNull() const;
+        bool IsArray() const;
+        bool IsDict() const;
 
         bool operator==(const Node& rhs) const;
-
-        const Dict& AsMap() const;
-
-        const Value& GetValue() const;
-        Value& GetValueNotConst();
-
+        bool operator!=(const Node& rhs) const;
     };
-
-    inline bool operator!=(const Node& lhs, const Node& rhs);
 
     class Document {
     public:
-        explicit Document(Node root)
-            : root_(std::move(root)) {
-        }
-        Document() {};
-        const Node& GetRoot() const {
-            return root_;
-        }
+        explicit Document(Node root);
+
+        const Node& GetRoot() const;
+
+        bool operator==(const Document& rhs) const;
+        bool operator!=(const Document& rhs) const;
 
     private:
         Node root_;
     };
 
-    inline bool operator==(const Document& lhs, const Document& rhs) {
-        return lhs.GetRoot() == rhs.GetRoot();
-    }
-
-    inline bool operator!=(const Document& lhs, const Document& rhs) {
-        return !(lhs == rhs);
-    }
-
     Document Load(std::istream& input);
 
-    void Print(const Document& doc, std::ostream& output);
+    void Print(const Document& doc, std::ostream& output,
+        int indent_size = 2, int indent_step = 1);
 
 }  // namespace json
